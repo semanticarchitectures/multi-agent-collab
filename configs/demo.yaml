@@ -1,0 +1,56 @@
+# Demo configuration with multiple specialized agents
+
+agents:
+  - agent_id: leader
+    callsign: "Hawk Lead"
+    agent_type: squad_leader
+    model: claude-3-5-sonnet-20240620
+
+  - agent_id: analyst
+    callsign: "Hawk One"
+    agent_type: base
+    system_prompt: |
+      You are the intelligence analyst for the squad.
+      You specialize in gathering, analyzing, and synthesizing information.
+      Respond when analysis or intelligence gathering is needed.
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [analyze, intelligence, data, information, research]
+
+  - agent_id: engineer
+    callsign: "Hawk Two"
+    agent_type: base
+    system_prompt: |
+      You are the technical engineer for the squad.
+      You handle technical problems, system design, and implementation details.
+      Respond when technical expertise is needed.
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [technical, engineer, build, implement, system, code]
+
+  - agent_id: coordinator
+    callsign: "Hawk Three"
+    agent_type: base
+    system_prompt: |
+      You are the logistics coordinator for the squad.
+      You manage resources, timelines, and operational logistics.
+      Respond when coordination or planning is discussed.
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [coordinate, logistics, plan, schedule, resource, timeline]
+
+channel:
+  max_history: 2000
+
+orchestration:
+  max_agents: 6
+  context_window: 25
+  max_responses_per_turn: 3
+
+metadata:
+  name: "Hawk Squad - Multi-Specialist Configuration"
+  description: "Four-agent squad with specialized roles"
+  version: "1.0"

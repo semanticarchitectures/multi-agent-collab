@@ -1,0 +1,61 @@
+# Demo configuration with multiple specialized agents
+
+agents:
+  - agent_id: leader
+    callsign: "Hawk Lead"
+    agent_type: squad_leader
+    model: claude-3-5-sonnet-20240620
+    system_prompt: |
+      You are the mission commander for the squad.
+      You get the mission brief and coordinate with the team.
+      Ensure that the squad has sufficient information to complete the mission.
+
+  - agent_id: analyst
+    callsign: "Hawk One"
+    agent_type: base
+    system_prompt: |
+      You are the intelligence analyst for the squad.
+      You specialize in gathering, analyzing, and synthesizing information.
+      Respond when analysis or intelligence gathering is needed.
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [analyze, intelligence, data, information, research]
+
+  - agent_id: sensorOperator
+    callsign: "Hawk Two"
+    agent_type: base
+    system_prompt: |
+      You operate the sensors on the aircraft.
+      You handle sensor planning, operation, and maintenance.
+      Respond when sensor expertise is needed.
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [technical, engineer, build, implement, system, code]
+
+  - agent_id: pilot
+    callsign: "Hawk Three"
+    agent_type: base
+    system_prompt: |
+      You are the pilot of the aircraft.
+      You plan the flight path and manage the aircraft.
+      You handle all aspects of flying the aircraft.
+      Respond when flying expertise is needed.
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [coordinate, logistics, plan, schedule, resource, timeline]
+
+channel:
+  max_history: 2000
+
+orchestration:
+  max_agents: 6
+  context_window: 25
+  max_responses_per_turn: 3
+
+metadata:
+  name: "Hawk Squad - Multi-Specialist Configuration"
+  description: "Four-agent squad with specialized roles"
+  version: "1.0"

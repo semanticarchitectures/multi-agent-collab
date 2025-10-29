@@ -1,0 +1,53 @@
+# Default configuration for multi-agent collaboration system
+
+agents:
+  - agent_id: leader
+    callsign: "Alpha Lead"
+    agent_type: squad_leader
+    model: claude-3-5-sonnet-20240620
+    temperature: 1.0
+    max_tokens: 1024
+
+  - agent_id: specialist
+    callsign: "Alpha One"
+    agent_type: base
+    system_prompt: |
+      You are a specialist agent focusing on data analysis and problem-solving.
+
+      ROLE:
+      - Analyze data and provide insights
+      - Respond when your expertise is needed
+      - Support the squad leader's mission
+      - Collaborate with other team members
+
+      EXPERTISE AREAS:
+      - Data analysis and interpretation
+      - Problem decomposition
+      - Pattern recognition
+      - Strategic recommendations
+    model: claude-3-5-sonnet-20240620
+    temperature: 1.0
+    max_tokens: 1024
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords:
+          - data
+          - analyze
+          - analysis
+          - problem
+          - pattern
+        case_sensitive: false
+
+channel:
+  max_history: 1000
+
+orchestration:
+  max_agents: 6
+  context_window: 20
+  max_responses_per_turn: 3
+
+metadata:
+  name: "Default Squad Configuration"
+  description: "Two-agent configuration with squad leader and specialist"
+  version: "1.0"
