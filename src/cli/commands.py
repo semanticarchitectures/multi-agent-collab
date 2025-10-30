@@ -11,6 +11,7 @@ from ..agents.squad_leader import SquadLeaderAgent
 from ..agents.speaking_criteria import KeywordCriteria, CompositeCriteria, DirectAddressCriteria
 from ..channel.shared_channel import SharedChannel
 from ..orchestration.orchestrator import Orchestrator
+from ..config import load_config
 
 
 console = Console()
@@ -153,27 +154,90 @@ def interactive_command(config_path=None, num_agents=2):
     try:
         # Create shared channel and orchestrator
         channel = SharedChannel()
-        orchestrator = Orchestrator(channel=channel)
 
-        # Create squad leader
-        leader = SquadLeaderAgent(
-            agent_id="leader",
-            callsign="Alpha Lead"
-        )
-        orchestrator.add_agent(leader)
+        # If config file provided, load from config
+        if config_path:
+            console.print(f"[dim]Loading configuration from {config_path}...[/dim]")
+            config = load_config(config_path)
 
-        # Create additional agents
-        if num_agents > 1:
-            specialist = BaseAgent(
-                agent_id="specialist",
-                callsign="Alpha One",
-                system_prompt="You are a specialist agent. Respond when addressed or when your expertise is needed.",
-                speaking_criteria=CompositeCriteria([
-                    DirectAddressCriteria(),
-                    KeywordCriteria(["help", "analyze", "data"])
-                ])
+            # Create orchestrator with config settings
+            orchestrator = Orchestrator(
+                channel=channel,
+                max_agents=config.orchestration.max_agents,
+                context_window=config.orchestration.context_window
             )
-            orchestrator.add_agent(specialist)
+
+            # Create agents from config
+            from ..agents.speaking_criteria import (
+                DirectAddressCriteria,
+                KeywordCriteria,
+                CompositeCriteria
+            )
+
+            for agent_cfg in config.agents:
+                if agent_cfg.agent_type == "squad_leader":
+                    agent = SquadLeaderAgent(
+                        agent_id=agent_cfg.agent_id,
+                        callsign=agent_cfg.callsign,
+                        system_prompt=agent_cfg.system_prompt,
+                        model=agent_cfg.model,
+                        temperature=agent_cfg.temperature,
+                        max_tokens=agent_cfg.max_tokens
+                    )
+                else:
+                    # Build speaking criteria
+                    criteria_list = []
+                    if agent_cfg.speaking_criteria:
+                        for crit_cfg in agent_cfg.speaking_criteria:
+                            if crit_cfg.type == "direct_address":
+                                criteria_list.append(DirectAddressCriteria())
+                            elif crit_cfg.type == "keywords" and crit_cfg.keywords:
+                                criteria_list.append(
+                                    KeywordCriteria(
+                                        crit_cfg.keywords,
+                                        case_sensitive=crit_cfg.case_sensitive
+                                    )
+                                )
+
+                    speaking_criteria = CompositeCriteria(criteria_list) if criteria_list else None
+
+                    agent = BaseAgent(
+                        agent_id=agent_cfg.agent_id,
+                        callsign=agent_cfg.callsign,
+                        system_prompt=agent_cfg.system_prompt or "You are a helpful agent.",
+                        speaking_criteria=speaking_criteria,
+                        model=agent_cfg.model,
+                        temperature=agent_cfg.temperature,
+                        max_tokens=agent_cfg.max_tokens
+                    )
+
+                orchestrator.add_agent(agent)
+
+            if config.metadata:
+                console.print(f"[dim]Configuration: {config.metadata.get('name', 'Custom')}[/dim]")
+        else:
+            # Default setup without config file
+            orchestrator = Orchestrator(channel=channel)
+
+            # Create squad leader
+            leader = SquadLeaderAgent(
+                agent_id="leader",
+                callsign="Alpha Lead"
+            )
+            orchestrator.add_agent(leader)
+
+            # Create additional agents
+            if num_agents > 1:
+                specialist = BaseAgent(
+                    agent_id="specialist",
+                    callsign="Alpha One",
+                    system_prompt="You are a specialist agent. Respond when addressed or when your expertise is needed.",
+                    speaking_criteria=CompositeCriteria([
+                        DirectAddressCriteria(),
+                        KeywordCriteria(["help", "analyze", "data"])
+                    ])
+                )
+                orchestrator.add_agent(specialist)
 
         orchestrator.start()
 

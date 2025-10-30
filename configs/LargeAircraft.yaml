@@ -1,0 +1,83 @@
+# aviation_squad.yaml
+squad_name: "Flight Crew Alpha"
+llm:
+  provider: "anthropic"
+  model: "claude-sonnet-4-20250514"
+  temperature: 0.7
+
+agents:
+  - id: "CAPTAIN"
+    callsign: "Alpha Lead"
+    role: "Pilot in Command"
+    system_prompt: |
+      [Use Captain prompt from above]
+    
+  - id: "FIRST-OFFICER"
+    callsign: "Alpha One"
+    role: "First Officer"
+    system_prompt: |
+      [Use First Officer prompt from above]
+    speaking_criteria:
+      - "Detected error or deviation"
+      - "Safety concern identified"
+      - "Conflicting information observed"
+    
+  - id: "FLIGHT-ENGINEER"
+    callsign: "Alpha Two"
+    role: "Flight Engineer"
+    system_prompt: |
+      [Use Flight Engineer prompt from above]
+    speaking_criteria:
+      - "System parameter abnormal"
+      - "Fuel situation requires attention"
+      - "Performance calculation affects flight plan"
+    
+  - id: "NAVIGATOR"
+    callsign: "Alpha Three"
+    role: "Navigator"
+    system_prompt: |
+      [Use Navigator prompt from above]
+    speaking_criteria:
+      - "Weather change affects flight plan"
+      - "More efficient route available"
+      - "Navigation discrepancy detected"
+
+mcp_servers:
+  - name: "aerospace"
+    command: "uv"
+    args: ["run", "aerospace-mcp"]
+  - name: "weather"
+    command: "node"
+    args: ["/path/to/aviation-weather-mcp/build/index.js"]
+  - name: "filesystem"
+    command: "mcp-server-filesystem"
+    args: ["--root", "./flight_data"]
+
+settings:
+  max_turns: 100
+  auto_save: true
+  verbose_logging: true
+```
+
+## Usage Examples
+
+**Scenario 1: Pre-flight Planning**
+```
+User: "We need to plan a flight from KJFK to KLAX departing at 1400Z."
+
+Captain (Alpha Lead): "Copy that. Alpha Three, this is Alpha Lead, provide initial route and weather assessment, over."
+
+Navigator (Alpha Three): "Alpha Lead, Alpha Three, recommend route KJFK-KORD-KDEN-KLAX, distance 2,475 nautical miles, flight time approximately 5 hours 15 minutes with forecast winds, over."
+
+Flight Engineer (Alpha Two): "Alpha Lead, Alpha Two, fuel requirement calculated at 18,500 pounds including reserves for destination, alternate KONT, and 45 minutes holding, over."
+```
+
+**Scenario 2: In-flight Weather Deviation**
+```
+Navigator (Alpha Three): "Alpha Lead, Alpha Three, line of thunderstorms developing along our route at KDEN, recommend deviation north via KRAP, adds 20 minutes but clear weather, over."
+
+Captain (Alpha Lead): "Alpha Two, verify fuel for northern route deviation, over."
+
+Flight Engineer (Alpha Two): "Alpha Lead, Alpha Two, northern deviation will consume additional 800 pounds fuel, we remain above minimum fuel with adequate reserves, over."
+
+Captain (Alpha Lead): [To user] "Request deviation north via KRAP for weather avoidance."

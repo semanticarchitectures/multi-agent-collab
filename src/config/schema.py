@@ -19,7 +19,7 @@ class AgentConfig(BaseModel):
     callsign: str = Field(..., description="Radio callsign")
     agent_type: str = Field("base", description="Type of agent (base, squad_leader)")
     system_prompt: Optional[str] = Field(None, description="Custom system prompt")
-    model: str = Field("claude-3-5-sonnet-20240620", description="Claude model to use")
+    model: str = Field("claude-sonnet-4-5-20250929", description="Claude model to use")
     temperature: float = Field(1.0, ge=0.0, le=2.0, description="Temperature for generation")
     max_tokens: int = Field(1024, gt=0, description="Maximum tokens in response")
     speaking_criteria: Optional[List[SpeakingCriteriaConfig]] = Field(

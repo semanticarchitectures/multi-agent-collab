@@ -1,0 +1,54 @@
+# U-28 Squadron Configuration using external prompt files
+# This demonstrates how to reuse system prompts across different configurations
+
+agents:
+  - agent_id: leader
+    callsign: "Hawk Lead"
+    agent_type: squad_leader
+    model: claude-sonnet-4-5-20250929
+    # Reference external prompt file
+    system_prompt_file: prompts/mission_commander.yaml
+
+  - agent_id: analyst
+    callsign: "Hawk One"
+    agent_type: base
+    # Reference external prompt file
+    system_prompt_file: prompts/intelligence_analyst.yaml
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [analyze, intelligence, data, information, research]
+
+  - agent_id: sensorOperator
+    callsign: "Hawk Two"
+    agent_type: base
+    # Reference external prompt file
+    system_prompt_file: prompts/sensor_operator.yaml
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [sensor, technical, system, detect, track]
+
+  - agent_id: pilot
+    callsign: "Hawk Three"
+    agent_type: base
+    # Reference external prompt file
+    system_prompt_file: prompts/pilot.yaml
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords: [flight, navigate, route, altitude, weather]
+
+channel:
+  max_history: 2000
+
+orchestration:
+  max_agents: 6
+  context_window: 25
+  max_responses_per_turn: 3
+
+metadata:
+  name: "Hawk Squad - U-28 Configuration"
+  description: "Four-agent squad with external prompt files"
+  version: "1.0"
+

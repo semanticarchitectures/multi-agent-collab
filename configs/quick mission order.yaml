@@ -1,0 +1,33 @@
+# Quick Mission Order - Simplified Format
+# For routine/training flights
+
+mission: "SURVEILLANCE"
+aircraft: "HC-144A #2307"
+crew: "LCDR Smith, LT Johnson, AMT1 Williams, OS2 Davis, OS3 Martinez"
+
+route:
+  from: "KFMH (Otis ANGB)"
+  to: "Nantucket Operating Area (41°15'N, 069°30'W)"
+  return: "KFMH"
+  altitude: "5000 FT"
+  
+schedule:
+  departure: "301400Z"
+  mission_duration: "4 hours"
+  return: "302000Z"
+  
+fuel:
+  load: "7500 LBS"
+  endurance: "6.5 hours"
+  bingo: "2500 LBS"
+  
+weather: "VFR, winds 090/12G18, scattered clouds, good visibility"
+
+objectives:
+  - "Maritime surveillance east of Nantucket"
+  - "Monitor shipping lanes"
+  - "Identify and classify vessels"
+  - "4-hour patrol in racetrack pattern"
+
+alternates: "KACK, KHYA"
+special: "Maintain 2000 FT min over water, monitor 121.5 MHz"

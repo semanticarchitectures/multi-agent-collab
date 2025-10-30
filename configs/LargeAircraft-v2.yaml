@@ -1,0 +1,85 @@
+# Large Aircraft Flight Crew Configuration
+# Multi-crew cockpit with Captain, First Officer, Flight Engineer, and Navigator
+
+agents:
+  - agent_id: captain
+    callsign: "Alpha Lead"
+    agent_type: squad_leader
+    system_prompt_file: prompts/captain.yaml
+    model: claude-sonnet-4-5-20250929
+    temperature: 0.7
+    max_tokens: 1024
+
+  - agent_id: first_officer
+    callsign: "Alpha One"
+    agent_type: base
+    system_prompt_file: prompts/first_officer.yaml
+    model: claude-sonnet-4-5-20250929
+    temperature: 0.7
+    max_tokens: 1024
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords:
+          - error
+          - deviation
+          - safety
+          - concern
+          - conflict
+          - abnormal
+        case_sensitive: false
+
+  - agent_id: flight_engineer
+    callsign: "Alpha Two"
+    agent_type: base
+    system_prompt_file: prompts/flight_engineer.yaml
+    model: claude-sonnet-4-5-20250929
+    temperature: 0.7
+    max_tokens: 1024
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords:
+          - system
+          - fuel
+          - performance
+          - engine
+          - hydraulic
+          - electrical
+          - parameter
+        case_sensitive: false
+
+  - agent_id: navigator
+    callsign: "Alpha Three"
+    agent_type: base
+    system_prompt_file: prompts/navigator.yaml
+    model: claude-sonnet-4-5-20250929
+    temperature: 0.7
+    max_tokens: 1024
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords:
+          - weather
+          - route
+          - navigation
+          - altitude
+          - airspace
+          - efficient
+          - plan
+        case_sensitive: false
+
+channel:
+  max_history: 2000
+
+orchestration:
+  max_agents: 6
+  context_window: 25
+  max_responses_per_turn: 3
+
+metadata:
+  name: "Large Aircraft Flight Crew"
+  description: "Four-person cockpit crew with specialized aviation roles"
+  version: "2.0"
+  aircraft_type: "Large Multi-Crew Aircraft"
+

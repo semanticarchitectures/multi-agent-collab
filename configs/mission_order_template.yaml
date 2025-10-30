@@ -1,0 +1,130 @@
+# Mission Order Template
+# Fill in all applicable fields before mission execution
+
+mission_info:
+  mission_number: ""
+  mission_type: ""  # Options: SURVEILLANCE, SAR, PATROL, TRANSPORT, TRAINING, etc.
+  classification: "UNCLASSIFIED"
+  priority: ""  # Options: ROUTINE, PRIORITY, IMMEDIATE, FLASH
+  issuing_authority: ""
+  date_issued: ""  # Format: YYYY-MM-DD
+  
+aircraft:
+  type: ""
+  tail_number: ""
+  configuration: ""  # Options: STANDARD, SAR, CARGO, PASSENGER, SPECIAL_MISSION
+  special_equipment: []  # List any special sensors, cargo, etc.
+  
+crew:
+  pilot_in_command:
+    name: ""
+    qualification: ""
+  first_officer:
+    name: ""
+    qualification: ""
+  flight_engineer:
+    name: ""
+    qualification: ""
+  additional_crew: []  # List other crew members (sensor operators, loadmaster, etc.)
+  
+flight_plan:
+  departure:
+    airport: ""  # ICAO code
+    runway: ""
+    departure_time: ""  # Format: DDHHmmZ (e.g., 151430Z)
+  
+  route:
+    waypoints: []  # List of waypoints/navaids
+    altitude: ""  # Format: FL250 or 8500 FT
+    airspeed: ""  # TAS in knots
+    
+  mission_area:
+    description: ""
+    center_point: ""  # Lat/Long
+    radius: ""  # Nautical miles
+    altitude_block: ""  # e.g., "1000-5000 FT"
+    loiter_time: ""  # Hours
+    pattern: ""  # Options: ORBIT, RACETRACK, GRID, RANDOM
+    
+  destination:
+    airport: ""  # ICAO code
+    runway: ""
+    estimated_arrival: ""  # Format: DDHHmmZ
+    
+  alternates:
+    primary: ""  # ICAO code
+    secondary: ""  # ICAO code
+    
+fuel:
+  planned_fuel_load: ""  # Pounds or gallons
+  fuel_burn_rate: ""  # Pounds per hour
+  estimated_endurance: ""  # Hours
+  bingo_fuel: ""  # Minimum fuel to RTB
+  reserve_fuel: ""  # Regulatory + additional reserves
+  
+performance:
+  takeoff_weight: ""  # Pounds
+  landing_weight: ""  # Pounds
+  center_of_gravity: ""  # Within limits
+  max_altitude: ""  # Feet
+  
+weather:
+  departure_weather:
+    conditions: ""
+    winds: ""
+    visibility: ""
+    ceiling: ""
+  
+  en_route_weather:
+    conditions: ""
+    significant_weather: []
+    icing: ""  # NONE, LIGHT, MODERATE, SEVERE
+    turbulence: ""  # NONE, LIGHT, MODERATE, SEVERE
+    
+  mission_area_weather:
+    conditions: ""
+    winds: ""
+    visibility: ""
+    sea_state: ""  # If applicable
+    
+  destination_weather:
+    conditions: ""
+    winds: ""
+    visibility: ""
+    ceiling: ""
+    
+mission_objectives:
+  primary: ""
+  secondary: []
+  success_criteria: []
+  
+special_instructions:
+  - ""
+  
+communications:
+  departure_frequency: ""
+  en_route_frequencies: []
+  mission_frequency: ""
+  guard_frequency: "121.5 MHz"  # Always monitor
+  
+search_and_rescue:
+  sar_unit: ""  # Nearest SAR coordination center
+  sar_frequency: ""
+  emergency_contact: ""
+  
+restrictions_and_constraints:
+  airspace_restrictions: []
+  time_constraints: []
+  equipment_limitations: []
+  regulatory_requirements: []
+  
+risk_assessment:
+  identified_hazards: []
+  mitigation_measures: []
+  overall_risk_level: ""  # LOW, MODERATE, HIGH
+  
+approvals:
+  operations_officer: ""
+  maintenance_officer: ""
+  commanding_officer: ""
+  

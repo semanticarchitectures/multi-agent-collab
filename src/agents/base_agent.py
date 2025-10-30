@@ -23,7 +23,7 @@ class BaseAgent:
         callsign: str,
         system_prompt: str,
         speaking_criteria: Optional[SpeakingCriteria] = None,
-        model: str = "claude-3-opus-20240229",
+        model: str = "claude-sonnet-4-5-20250929",
         temperature: float = 1.0,
         max_tokens: int = 1024
     ):

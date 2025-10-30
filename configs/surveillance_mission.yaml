@@ -1,0 +1,184 @@
+# Mission Order - HC-144 Surveillance Mission
+# Otis ANGB to Nantucket Operating Area
+
+mission_info:
+  mission_number: "USCG-2025-1030-001"
+  mission_type: "SURVEILLANCE"
+  classification: "UNCLASSIFIED"
+  priority: "ROUTINE"
+  issuing_authority: "Air Station Cape Cod Operations"
+  date_issued: "2025-10-30"
+  
+aircraft:
+  type: "HC-144A Ocean Sentry"
+  tail_number: "2307"
+  configuration: "STANDARD_SURVEILLANCE"
+  special_equipment:
+    - "AN/APS-143C(V)3 Ocean Eye radar"
+    - "MX-15 EO/IR sensor"
+    - "AIS receiver"
+    - "Emergency radio direction finding"
+  
+crew:
+  pilot_in_command:
+    name: "LCDR Smith, J."
+    qualification: "Aircraft Commander, IP"
+  first_officer:
+    name: "LT Johnson, M."
+    qualification: "Co-Pilot, Mission Commander Qualified"
+  flight_engineer:
+    name: "AMT1 Williams, R."
+    qualification: "Flight Engineer, HC-144 Qualified"
+  additional_crew:
+    - name: "OS2 Davis, K."
+      position: "Sensor Systems Operator"
+    - name: "OS3 Martinez, A."
+      position: "Mission Systems Operator"
+  
+flight_plan:
+  departure:
+    airport: "KFMH"  # Otis ANGB
+    runway: "05"
+    departure_time: "301400Z"  # 30th day, 1400 UTC
+  
+  route:
+    waypoints:
+      - "KFMH"
+      - "HYANS"  # Hyannis VOR
+      - "ACK"    # Nantucket VOR
+      - "PATROL_AREA_ALPHA"
+    altitude: "5000 FT"
+    airspeed: "180 KTAS"
+    
+  mission_area:
+    description: "Maritime surveillance area east of Nantucket Island, monitoring shipping lanes and conducting offshore surveillance"
+    center_point: "41°15'N, 069°30'W"
+    radius: "25 NM"
+    altitude_block: "1000-5000 FT"
+    loiter_time: "4.0 hours"
+    pattern: "RACETRACK"
+    
+  destination:
+    airport: "KFMH"  # Return to Otis ANGB
+    runway: "05"
+    estimated_arrival: "302000Z"
+    
+  alternates:
+    primary: "KACK"  # Nantucket Memorial
+    secondary: "KHYA"  # Barnstable Municipal
+    
+fuel:
+  planned_fuel_load: "7500 LBS"
+  fuel_burn_rate: "1050 LBS/HR"
+  estimated_endurance: "6.5 hours"
+  bingo_fuel: "2500 LBS"  # Fuel to return to KFMH with reserves
+  reserve_fuel: "1200 LBS"  # 45 min reserve + 200 LBS contingency
+  
+performance:
+  takeoff_weight: "44500 LBS"
+  landing_weight: "42000 LBS"
+  center_of_gravity: "28.5% MAC"  # Within 25-32% limits
+  max_altitude: "8000 FT"
+  
+weather:
+  departure_weather:
+    conditions: "VFR"
+    winds: "090/12G18KT"
+    visibility: "10 SM"
+    ceiling: "BKN025"
+  
+  en_route_weather:
+    conditions: "VFR, scattered clouds"
+    significant_weather:
+      - "Isolated rain showers possible"
+    icing: "NONE below 10000 FT"
+    turbulence: "LIGHT below 5000 FT"
+    
+  mission_area_weather:
+    conditions: "VFR"
+    winds: "100/15G20KT"
+    visibility: "8 SM"
+    sea_state: "3-4 FT"
+    
+  destination_weather:
+    conditions: "VFR"
+    winds: "090/10KT"
+    visibility: "10 SM"
+    ceiling: "SCT030"
+    
+mission_objectives:
+  primary: "Conduct maritime surveillance of shipping lanes east of Nantucket to monitor vessel traffic and identify vessels of interest"
+  secondary:
+    - "Maintain maritime domain awareness"
+    - "Collect AIS data from commercial vessels"
+    - "Document any suspicious or illegal activity"
+    - "Practice sensor operations and crew coordination"
+  success_criteria:
+    - "Complete 4-hour surveillance patrol"
+    - "Radar coverage of primary shipping lanes"
+    - "Identify and classify minimum 20 vessels"
+    - "No safety incidents"
+  
+special_instructions:
+  - "Maintain 2000 FT minimum altitude over water"
+  - "Coordinate with Boston Center for traffic separation"
+  - "Report any vessels in distress immediately"
+  - "Photograph any vessels of interest"
+  - "Maintain visual lookout for marine mammals"
+  - "Check NOTAMS for any restricted areas or military operations"
+  
+communications:
+  departure_frequency: "Cape Approach 120.4 MHz"
+  en_route_frequencies:
+    - "Boston Center 128.95 MHz"
+    - "Nantucket Tower 118.3 MHz (if needed)"
+  mission_frequency: "USCG Ops Primary 164.15 MHz"
+  guard_frequency: "121.5 MHz"
+  
+search_and_rescue:
+  sar_unit: "First Coast Guard District Command Center"
+  sar_frequency: "164.10 MHz"
+  emergency_contact: "+1-617-223-8555"
+  
+restrictions_and_constraints:
+  airspace_restrictions:
+    - "R-4501 Warning Area - Check activation status"
+    - "Remain clear of P-67 (Presidential TFR if active)"
+  time_constraints:
+    - "Depart NLT 1400Z to allow daylight ops"
+    - "RTB NLT 2000Z (sunset minus 30 min)"
+  equipment_limitations:
+    - "AIS receiver operational check required pre-mission"
+    - "MX-15 sensor cooling system - monitor temps"
+  regulatory_requirements:
+    - "IFR flight plan filed as backup"
+    - "Life vests for all crew over water"
+    - "Life raft serviceable and aboard"
+  
+risk_assessment:
+  identified_hazards:
+    - "Low altitude operations over water"
+    - "Variable winds and turbulence"
+    - "Potential for rapid weather changes"
+    - "Bird strike hazard (coastal area)"
+    - "Single-engine ferry range if engine failure"
+  mitigation_measures:
+    - "Maintain altitude at or above 2000 FT AGL"
+    - "Monitor weather continuously, ready to RTB"
+    - "All crew briefed on ditching procedures"
+    - "Bird avoidance procedures in effect"
+    - "Maintain fuel state above bingo at all times"
+  overall_risk_level: "MODERATE"
+  
+approvals:
+  operations_officer: "CDR Thompson, P. - Approved"
+  maintenance_officer: "CWO3 Anderson, L. - Aircraft 2307 airworthy"
+  commanding_officer: "CAPT Wilson, R. - Mission approved"
+
+# Additional Notes:
+# - Weather briefing obtained from aviationweather.gov
+# - NOTAMs checked - no significant restrictions
+# - Crew rest requirements met (12 hours off duty)
+# - Aircraft systems check complete - all systems operational
+# - Fuel calculation verified by flight engineer
+# - Mission profile reviewed with crew during briefing
