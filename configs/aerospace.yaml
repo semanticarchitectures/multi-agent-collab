@@ -11,7 +11,7 @@ agents:
 
   - agent_id: aerospace_specialist
     callsign: "Hawk One"
-    agent_type: aerospace
+    agent_type: base
     system_prompt: |
       You are an AEROSPACE ENGINEERING SPECIALIST with access to advanced aerospace analysis tools via MCP.
 
