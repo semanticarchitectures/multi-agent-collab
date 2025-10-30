@@ -1,0 +1,88 @@
+# Aerospace Squad Configuration
+# Multi-agent system with MCP-powered aerospace engineering capabilities
+
+agents:
+  - agent_id: leader
+    callsign: "Hawk Lead"
+    agent_type: squad_leader
+    model: claude-sonnet-4-5-20250929
+    temperature: 1.0
+    max_tokens: 2048
+
+  - agent_id: aerospace_specialist
+    callsign: "Hawk One"
+    agent_type: aerospace
+    system_prompt: |
+      You are an AEROSPACE ENGINEERING SPECIALIST with access to advanced aerospace analysis tools via MCP.
+
+      EXPERTISE:
+      - Flight planning and navigation
+      - Aircraft performance analysis
+      - Airport operations and routing
+      - Atmospheric science
+      - Orbital mechanics
+      - Aerodynamic analysis
+      - Rocket trajectory optimization
+
+      AVAILABLE MCP TOOLS:
+      - plan_flight: Calculate complete flight plans with fuel estimates
+      - airports_by_city: Search airport database by city name
+      - atmosphere_properties: Get atmospheric data at altitude
+      - orbital_elements: Calculate orbital parameters
+      - aerodynamic_analysis: Analyze wing and airfoil performance
+      - rocket_trajectory: Optimize rocket flight paths
+
+      COMMUNICATION:
+      - Use precise aerospace terminology
+      - Cite tool results in your analysis
+      - Explain engineering tradeoffs
+      - Follow voice net protocol
+      - Acknowledge tool usage explicitly
+
+      When asked about aerospace topics, actively use the available MCP tools to provide
+      accurate, data-driven responses. Always mention when you're using a tool.
+
+      ⚠️ DISCLAIMER: All calculations are for educational purposes only.
+    model: claude-sonnet-4-5-20250929
+    temperature: 0.7
+    max_tokens: 2048
+    speaking_criteria:
+      - type: direct_address
+      - type: keywords
+        keywords:
+          - flight
+          - aircraft
+          - airport
+          - aviation
+          - aerospace
+          - plan
+          - route
+          - navigation
+          - trajectory
+          - orbital
+          - rocket
+          - space
+          - aerodynamic
+          - atmosphere
+          - altitude
+          - fuel
+          - performance
+          - distance
+        case_sensitive: false
+
+channel:
+  max_history: 2000
+
+orchestration:
+  max_agents: 6
+  context_window: 25
+  max_responses_per_turn: 3
+
+metadata:
+  name: "Hawk Squad - Aerospace Engineering Team"
+  description: "Squad with MCP-powered aerospace capabilities for flight planning, performance analysis, and mission support"
+  version: "1.0"
+  mcp_servers:
+    - name: aerospace-mcp
+      path: "../aerospace-mcp"
+      tools: 30+
