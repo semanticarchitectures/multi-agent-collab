@@ -239,3 +239,84 @@ async def initialize_aerospace_mcp(
         args=["--directory", aerospace_mcp_path, "run", "aerospace-mcp"],
         env=env
     )
+
+
+async def initialize_aviation_weather_mcp(
+    aviation_weather_mcp_path: str,
+    env: Optional[Dict[str, str]] = None
+) -> bool:
+    """Initialize connection to the Aviation Weather MCP server.
+
+    Args:
+        aviation_weather_mcp_path: Path to aviation-weather-mcp directory
+        env: Optional environment variables
+
+    Returns:
+        True if successful
+    """
+    manager = await get_mcp_manager()
+
+    return await manager.connect_server(
+        server_name="aviation-weather-mcp",
+        command="uv",
+        args=["--directory", aviation_weather_mcp_path, "run", "aviation-weather-mcp"],
+        env=env
+    )
+
+
+async def initialize_blevinstein_aviation_mcp(
+    blevinstein_aviation_mcp_path: str,
+    env: Optional[Dict[str, str]] = None
+) -> bool:
+    """Initialize connection to the Blevinstein Aviation MCP server.
+
+    Args:
+        blevinstein_aviation_mcp_path: Path to blevinstein aviation-mcp directory
+        env: Optional environment variables
+
+    Returns:
+        True if successful
+    """
+    manager = await get_mcp_manager()
+
+    return await manager.connect_server(
+        server_name="blevinstein-aviation-mcp",
+        command="uv",
+        args=["--directory", blevinstein_aviation_mcp_path, "run", "aviation-mcp"],
+        env=env
+    )
+
+
+async def initialize_all_aviation_mcps(
+    aerospace_path: Optional[str] = None,
+    aviation_weather_path: Optional[str] = None,
+    blevinstein_aviation_path: Optional[str] = None,
+    env: Optional[Dict[str, str]] = None
+) -> Dict[str, bool]:
+    """Initialize all available aviation MCP servers.
+
+    Args:
+        aerospace_path: Path to aerospace-mcp directory (optional)
+        aviation_weather_path: Path to aviation-weather-mcp directory (optional)
+        blevinstein_aviation_path: Path to blevinstein aviation-mcp directory (optional)
+        env: Optional environment variables
+
+    Returns:
+        Dictionary mapping server names to connection success status
+    """
+    results = {}
+
+    if aerospace_path:
+        results["aerospace-mcp"] = await initialize_aerospace_mcp(aerospace_path, env)
+
+    if aviation_weather_path:
+        results["aviation-weather-mcp"] = await initialize_aviation_weather_mcp(
+            aviation_weather_path, env
+        )
+
+    if blevinstein_aviation_path:
+        results["blevinstein-aviation-mcp"] = await initialize_blevinstein_aviation_mcp(
+            blevinstein_aviation_path, env
+        )
+
+    return results

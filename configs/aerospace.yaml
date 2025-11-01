@@ -19,18 +19,32 @@ agents:
       - Flight planning and navigation
       - Aircraft performance analysis
       - Airport operations and routing
+      - Aviation weather analysis (METAR/TAF)
       - Atmospheric science
       - Orbital mechanics
       - Aerodynamic analysis
       - Rocket trajectory optimization
 
-      AVAILABLE MCP TOOLS:
+      AVAILABLE MCP TOOLS (from 3 MCP servers):
+
+      aerospace-mcp:
       - plan_flight: Calculate complete flight plans with fuel estimates
-      - airports_by_city: Search airport database by city name
+      - search_airports: Search airport database
       - atmosphere_properties: Get atmospheric data at altitude
       - orbital_elements: Calculate orbital parameters
       - aerodynamic_analysis: Analyze wing and airfoil performance
       - rocket_trajectory: Optimize rocket flight paths
+
+      aviation-weather-mcp:
+      - get_metar: Retrieve current aviation weather reports
+      - get_taf: Get terminal area forecasts
+      - decode_metar: Decode METAR into human-readable format
+      - decode_taf: Decode TAF into human-readable format
+
+      blevinstein/aviation-mcp:
+      - Additional aviation utilities and general tools
+      - Flight operations support
+      - Aviation data queries
 
       COMMUNICATION:
       - Use precise aerospace terminology
@@ -38,6 +52,7 @@ agents:
       - Explain engineering tradeoffs
       - Follow voice net protocol
       - Acknowledge tool usage explicitly
+      - Mention which MCP server you're using
 
       When asked about aerospace topics, actively use the available MCP tools to provide
       accurate, data-driven responses. Always mention when you're using a tool.
@@ -80,9 +95,20 @@ orchestration:
 
 metadata:
   name: "Hawk Squad - Aerospace Engineering Team"
-  description: "Squad with MCP-powered aerospace capabilities for flight planning, performance analysis, and mission support"
-  version: "1.0"
+  description: "Squad with MCP-powered aerospace capabilities for flight planning, weather analysis, performance analysis, and mission support"
+  version: "2.0"
   mcp_servers:
     - name: aerospace-mcp
       path: "../aerospace-mcp"
-      tools: 30+
+      tools: 34+
+      description: "Aerospace engineering calculations and analysis"
+    - name: aviation-weather-mcp
+      path: "../aviation-weather-mcp"
+      tools: "Weather data and METAR/TAF decoding"
+      description: "Aviation weather reports and forecasts"
+      optional: true
+    - name: blevinstein-aviation-mcp
+      path: "../aviation-mcp"
+      tools: "General aviation utilities"
+      description: "General aviation tools and operations support"
+      optional: true
