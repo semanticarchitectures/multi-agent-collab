@@ -63,6 +63,12 @@ async def verify_all_servers():
                 "FAA_CLIENT_SECRET": os.getenv("FAA_CLIENT_SECRET", ""),
                 "API_NINJAS_KEY": os.getenv("API_NINJAS_KEY", "")
             }
+        },
+        "aviation-weather-mcp": {
+            "path": base_path / "aviation-weather-mcp",
+            "command": "python",
+            "args_template": ["-m", "aviation_weather_mcp.server"],
+            "description": "Aviation weather data from aviationweather.gov (METAR, TAF, PIREP, etc.)"
         }
     }
     
@@ -215,16 +221,16 @@ async def verify_all_servers():
                     if "metar" in tool['name'].lower() or "weather" in tool['name'].lower():
                         weather_tool = tool
                         break
-                
+
                 if weather_tool:
                     print(f"  Found tool: {weather_tool['name']}")
                     # Try calling it with a simple airport code
                     result = await manager.call_tool(
                         server_name="aviation-mcp",
                         tool_name=weather_tool['name'],
-                        arguments={"airport": "KSFO"}  # Try common parameter name
+                        arguments={"ids": "KSFO"}  # Correct parameter name
                     )
-                    
+
                     if result and hasattr(result, 'content') and result.content:
                         response_text = result.content[0].text
                         print_status("aviation-mcp tool execution successful", "success")
@@ -239,11 +245,34 @@ async def verify_all_servers():
             else:
                 print_status("No tools discovered from aviation-mcp", "warning")
                 test_results["aviation-mcp"] = False
-                
+
         except Exception as e:
             print_status(f"aviation-mcp tool execution error: {e}", "error")
             print(f"  This may be expected if API keys are not configured")
             test_results["aviation-mcp"] = False
+
+    # Test aviation-weather-mcp
+    if "aviation-weather-mcp" in connection_results and connection_results["aviation-weather-mcp"]:
+        print_status("Testing aviation-weather-mcp tool: get_metar", "info")
+        try:
+            result = await manager.call_tool(
+                server_name="aviation-weather-mcp",
+                tool_name="get_metar",
+                arguments={"ids": "KSFO"}
+            )
+
+            if result and hasattr(result, 'content') and result.content:
+                response_text = result.content[0].text
+                print_status("aviation-weather-mcp tool execution successful", "success")
+                print(f"  Result preview: {response_text[:150]}...")
+                test_results["aviation-weather-mcp"] = True
+            else:
+                print_status("aviation-weather-mcp tool returned no result", "warning")
+                test_results["aviation-weather-mcp"] = False
+
+        except Exception as e:
+            print_status(f"aviation-weather-mcp tool execution error: {e}", "error")
+            test_results["aviation-weather-mcp"] = False
     
     # Final summary
     print_header("Verification Summary")

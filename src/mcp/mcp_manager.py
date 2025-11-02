@@ -185,6 +185,10 @@ class MCPManager:
         self.tools_cache.clear()
         self._initialized = False
 
+    async def cleanup(self):
+        """Alias for close() for convenience."""
+        await self.close()
+
     def is_initialized(self) -> bool:
         """Check if manager is initialized with at least one server.
 

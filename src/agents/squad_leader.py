@@ -4,6 +4,7 @@ from typing import Optional
 
 from .base_agent import BaseAgent
 from .speaking_criteria import SquadLeaderCriteria, CompositeCriteria, DirectAddressCriteria
+from ..mcp.mcp_manager import MCPManager
 
 
 class SquadLeaderAgent(BaseAgent):
@@ -21,7 +22,8 @@ class SquadLeaderAgent(BaseAgent):
         agent_id: str,
         callsign: str,
         system_prompt: Optional[str] = None,
-        model: str = "claude-3-opus-20240229",
+        mcp_manager: Optional[MCPManager] = None,
+        model: str = "claude-sonnet-4-5-20250929",
         temperature: float = 1.0,
         max_tokens: int = 1024
     ):
@@ -31,6 +33,7 @@ class SquadLeaderAgent(BaseAgent):
             agent_id: Unique identifier for the agent
             callsign: Radio callsign (typically includes "Lead")
             system_prompt: Optional custom system prompt
+            mcp_manager: Optional MCP manager for tool access
             model: Claude model to use
             temperature: Temperature for response generation
             max_tokens: Maximum tokens in response
@@ -50,6 +53,7 @@ class SquadLeaderAgent(BaseAgent):
             callsign=callsign,
             system_prompt=system_prompt,
             speaking_criteria=speaking_criteria,
+            mcp_manager=mcp_manager,
             model=model,
             temperature=temperature,
             max_tokens=max_tokens

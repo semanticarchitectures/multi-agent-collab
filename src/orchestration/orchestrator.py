@@ -1,5 +1,6 @@
 """Orchestrator for managing multi-agent collaboration."""
 
+import asyncio
 from typing import List, Optional, Dict, Any
 from datetime import datetime
 
@@ -122,7 +123,7 @@ class Orchestrator:
             message_type=MessageType.USER
         )
 
-    def process_responses(
+    async def process_responses(
         self,
         max_responses: int = 3,
         timeout_seconds: float = 30.0
@@ -151,10 +152,10 @@ class Orchestrator:
         if not responding_agents and self.squad_leader:
             responding_agents.append(self.squad_leader)
 
-        # Generate responses
+        # Generate responses (now async)
         for agent in responding_agents:
             try:
-                message = agent.respond(self.channel, self.context_window)
+                message = await agent.respond(self.channel, self.context_window)
                 if message:
                     responses.append(message)
             except Exception as e:
@@ -162,7 +163,7 @@ class Orchestrator:
 
         return responses
 
-    def run_turn(
+    async def run_turn(
         self,
         user_message: Optional[str] = None,
         max_agent_responses: int = 3
@@ -187,8 +188,8 @@ class Orchestrator:
             msg = self.send_user_message(user_message)
             turn_data["user_message"] = msg
 
-        # Process agent responses
-        responses = self.process_responses(max_responses=max_agent_responses)
+        # Process agent responses (now async)
+        responses = await self.process_responses(max_responses=max_agent_responses)
         turn_data["agent_responses"] = responses
 
         return turn_data
