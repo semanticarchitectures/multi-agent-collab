@@ -4,7 +4,7 @@ agents:
   - agent_id: leader
     callsign: "Hawk Lead"
     agent_type: squad_leader
-    model: claude-3-5-sonnet-20240620
+    model: claude-sonnet-4-5-20250929
     system_prompt: |
       You are the mission commander for the squad.
       You get the mission brief and coordinate with the team.
@@ -13,6 +13,7 @@ agents:
   - agent_id: analyst
     callsign: "Hawk One"
     agent_type: base
+    model: claude-sonnet-4-5-20250929
     system_prompt: |
       You are the intelligence analyst for the squad.
       You specialize in gathering, analyzing, and synthesizing information.
@@ -25,6 +26,7 @@ agents:
   - agent_id: sensorOperator
     callsign: "Hawk Two"
     agent_type: base
+    model: claude-sonnet-4-5-20250929
     system_prompt: |
       You operate the sensors on the aircraft.
       You handle sensor planning, operation, and maintenance.
@@ -37,6 +39,7 @@ agents:
   - agent_id: pilot
     callsign: "Hawk Three"
     agent_type: base
+    model: claude-sonnet-4-5-20250929
     system_prompt: |
       You are the pilot of the aircraft.
       You plan the flight path and manage the aircraft.

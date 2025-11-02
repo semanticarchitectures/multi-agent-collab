@@ -1,5 +1,6 @@
 """Main CLI entry point for multi-agent collaboration system."""
 
+import asyncio
 import click
 from rich.console import Console
 from rich.panel import Panel
@@ -25,7 +26,7 @@ def cli():
 @cli.command()
 def demo():
     """Run a simple demo with 2 agents exchanging messages."""
-    demo_command()
+    asyncio.run(demo_command())
 
 
 @cli.command()
@@ -44,7 +45,7 @@ def demo():
 )
 def interactive(config, agents):
     """Start an interactive collaboration session."""
-    interactive_command(config, agents)
+    asyncio.run(interactive_command(config, agents))
 
 
 @cli.command()

@@ -118,14 +118,18 @@ class BaseAgent:
             tools = self._format_tools_for_claude()
 
         # Generate initial response using Claude
-        response = self.client.messages.create(
-            model=self.model,
-            max_tokens=self.max_tokens,
-            temperature=self.temperature,
-            system=self._build_system_prompt(),
-            messages=messages,
-            tools=tools if tools else None
-        )
+        # Only include tools parameter if we have tools
+        api_params = {
+            "model": self.model,
+            "max_tokens": self.max_tokens,
+            "temperature": self.temperature,
+            "system": self._build_system_prompt(),
+            "messages": messages
+        }
+        if tools:
+            api_params["tools"] = tools
+
+        response = self.client.messages.create(**api_params)
 
         # Tool use loop - continue until we get a text response
         while response.stop_reason == "tool_use":
@@ -155,14 +159,17 @@ class BaseAgent:
             })
 
             # Continue conversation with tool results
-            response = self.client.messages.create(
-                model=self.model,
-                max_tokens=self.max_tokens,
-                temperature=self.temperature,
-                system=self._build_system_prompt(),
-                messages=messages,
-                tools=tools if tools else None
-            )
+            api_params = {
+                "model": self.model,
+                "max_tokens": self.max_tokens,
+                "temperature": self.temperature,
+                "system": self._build_system_prompt(),
+                "messages": messages
+            }
+            if tools:
+                api_params["tools"] = tools
+
+            response = self.client.messages.create(**api_params)
 
         # Extract final text from response
         response_text = ""

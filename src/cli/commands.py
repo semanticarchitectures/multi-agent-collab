@@ -17,7 +17,7 @@ from ..config import load_config
 console = Console()
 
 
-def demo_command():
+async def demo_command():
     """Run a simple demo with 2 agents exchanging messages."""
     console.print(Panel.fit(
         "[bold cyan]Multi-Agent Demo[/bold cyan]\n"
@@ -86,7 +86,7 @@ EXPERTISE AREAS:
         user_msg = "What's our current status?"
         console.print(f"[bold blue]User:[/bold blue] {user_msg}\n")
 
-        orchestrator.run_turn(user_message=user_msg)
+        await orchestrator.run_turn(user_message=user_msg)
 
         # Show responses
         recent = channel.get_recent_messages(5)
@@ -102,7 +102,7 @@ EXPERTISE AREAS:
         user_msg = "Alpha One, I need you to analyze this data pattern."
         console.print(f"[bold blue]User:[/bold blue] {user_msg}\n")
 
-        orchestrator.run_turn(user_message=user_msg)
+        await orchestrator.run_turn(user_message=user_msg)
 
         # Show responses
         recent = channel.get_recent_messages(5)
@@ -118,7 +118,7 @@ EXPERTISE AREAS:
         user_msg = "We need to analyze the problem and find a solution."
         console.print(f"[bold blue]User:[/bold blue] {user_msg}\n")
 
-        orchestrator.run_turn(user_message=user_msg)
+        await orchestrator.run_turn(user_message=user_msg)
 
         # Show responses
         recent = channel.get_recent_messages(5)
@@ -138,7 +138,7 @@ EXPERTISE AREAS:
         traceback.print_exc()
 
 
-def interactive_command(config_path=None, num_agents=2):
+async def interactive_command(config_path=None, num_agents=2):
     """Run an interactive collaboration session."""
     console.print(Panel.fit(
         "[bold cyan]Interactive Mode[/bold cyan]\n"
@@ -261,7 +261,7 @@ def interactive_command(config_path=None, num_agents=2):
                     continue
 
                 # Send user message and get responses
-                orchestrator.run_turn(user_message=user_input)
+                await orchestrator.run_turn(user_message=user_input)
 
                 # Display agent responses
                 recent = channel.get_recent_messages(5)
