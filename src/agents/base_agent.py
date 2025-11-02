@@ -1,6 +1,7 @@
 """Base agent class for multi-agent collaboration."""
 
 import os
+import re
 from typing import List, Optional, Dict, Any
 from anthropic import Anthropic
 
@@ -49,6 +50,15 @@ class BaseAgent:
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
+
+        # Initialize agent memory
+        self.memory: Dict[str, Any] = {
+            "task_list": [],
+            "key_facts": {},
+            "decisions_made": [],
+            "concerns": [],
+            "notes": []
+        }
 
         # Initialize Anthropic client
         api_key = os.getenv("ANTHROPIC_API_KEY")
@@ -160,7 +170,12 @@ class BaseAgent:
             if hasattr(block, "text"):
                 response_text += block.text
 
-        return response_text.strip()
+        response_text = response_text.strip()
+
+        # Extract and process any memory updates from the response
+        self._extract_memory_updates(response_text)
+
+        return response_text
 
     async def respond(
         self,
@@ -226,6 +241,24 @@ Your callsign is: {self.callsign}"""
                 for tool in tools:
                     tool_descriptions += f"\n- {tool['name']}: {tool['description']}"
                 base_prompt += tool_descriptions
+
+        # Add memory context
+        memory_context = self._build_memory_context()
+        if memory_context:
+            base_prompt += memory_context
+
+        # Add memory update instructions
+        base_prompt += """
+
+MEMORY MANAGEMENT:
+You can update your persistent memory using these commands (include them in your response):
+- MEMORIZE[task]: [task description] - Add to task list
+- MEMORIZE[fact]: [key]=[value] - Store important fact
+- MEMORIZE[decision]: [decision made] - Record decision
+- MEMORIZE[concern]: [safety or operational concern] - Record concern
+- MEMORIZE[note]: [general note] - Add general note
+
+Your memory persists across conversations and helps you maintain context."""
 
         base_prompt += "\n\nRemember to stay in character and follow the voice net protocol for all communications."
 
@@ -318,6 +351,131 @@ Your callsign is: {self.callsign}"""
             error_msg = f"Error executing tool {tool_name}: {str(e)}"
             print(error_msg)
             return error_msg
+
+    def _build_memory_context(self) -> str:
+        """Build memory context for system prompt.
+
+        Returns:
+            Formatted memory context string
+        """
+        if not any(self.memory.values()):
+            return ""
+
+        context = "\n\nYOUR CURRENT MEMORY/SCRATCHPAD:"
+
+        if self.memory.get("task_list"):
+            context += "\n\nActive Tasks:"
+            for i, task in enumerate(self.memory["task_list"], 1):
+                context += f"\n  {i}. {task}"
+
+        if self.memory.get("key_facts"):
+            context += "\n\nKey Facts:"
+            for key, value in self.memory["key_facts"].items():
+                context += f"\n  - {key}: {value}"
+
+        if self.memory.get("decisions_made"):
+            context += "\n\nRecent Decisions:"
+            for decision in self.memory["decisions_made"][-3:]:  # Last 3
+                context += f"\n  - {decision}"
+
+        if self.memory.get("concerns"):
+            context += "\n\nActive Concerns:"
+            for concern in self.memory["concerns"]:
+                context += f"\n  - {concern}"
+
+        if self.memory.get("notes"):
+            context += "\n\nNotes:"
+            for note in self.memory["notes"][-5:]:  # Last 5
+                context += f"\n  - {note}"
+
+        return context
+
+    def update_memory(self, category: str, content: Any):
+        """Update agent's persistent memory.
+
+        Args:
+            category: Memory category (task/task_list, fact/key_facts, decision/decisions_made, concern/concerns, note/notes)
+            content: Content to add to memory
+        """
+        # Map singular to plural form for convenience
+        category_map = {
+            "task": "task_list",
+            "fact": "key_facts",
+            "decision": "decisions_made",
+            "concern": "concerns",
+            "note": "notes"
+        }
+
+        # Convert singular to plural if needed
+        actual_category = category_map.get(category, category)
+
+        if actual_category not in self.memory:
+            print(f"Warning: Unknown memory category '{category}' (mapped to '{actual_category}')")
+            return
+
+        if isinstance(self.memory[actual_category], list):
+            self.memory[actual_category].append(content)
+        elif isinstance(self.memory[actual_category], dict):
+            # For key_facts, expect "key=value" format
+            if "=" in str(content):
+                key, value = str(content).split("=", 1)
+                self.memory[actual_category][key.strip()] = value.strip()
+            else:
+                print(f"Warning: key_facts requires 'key=value' format, got: {content}")
+        else:
+            self.memory[actual_category] = content
+
+    def _extract_memory_updates(self, response: str):
+        """Parse response for memory update commands.
+
+        Args:
+            response: Agent's response text
+        """
+        # Pattern: MEMORIZE[category]: content
+        pattern = r"MEMORIZE\[(\w+)\]:\s*(.+?)(?:\n|$)"
+        matches = re.findall(pattern, response, re.MULTILINE)
+
+        for category, content in matches:
+            if category in self.memory:
+                self.update_memory(category, content.strip())
+
+    def clear_memory(self, category: Optional[str] = None):
+        """Clear memory for a specific category or all memory.
+
+        Args:
+            category: Optional category to clear. If None, clears all memory.
+        """
+        if category:
+            if category in self.memory:
+                if isinstance(self.memory[category], list):
+                    self.memory[category] = []
+                elif isinstance(self.memory[category], dict):
+                    self.memory[category] = {}
+                else:
+                    self.memory[category] = None
+        else:
+            # Clear all memory
+            self.memory = {
+                "task_list": [],
+                "key_facts": {},
+                "decisions_made": [],
+                "concerns": [],
+                "notes": []
+            }
+
+    def get_memory_summary(self) -> Dict[str, Any]:
+        """Get a summary of current memory state.
+
+        Returns:
+            Dictionary with memory statistics
+        """
+        return {
+            "tasks": len(self.memory.get("task_list", [])),
+            "facts": len(self.memory.get("key_facts", {})),
+            "decisions": len(self.memory.get("decisions_made", [])),
+            "concerns": len(self.memory.get("concerns", [])),
+            "notes": len(self.memory.get("notes", []))
+        }
 
     def get_agent_type(self) -> str:
         """Get the type of agent.
