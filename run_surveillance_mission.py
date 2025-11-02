@@ -274,12 +274,8 @@ Crew, acknowledge receipt of mission brief and provide your initial assessment."
                 # Send message and get responses
                 turn_result = await orchestrator.run_turn(user_message=user_input)
 
-                # Debug: show how many responses we got
-                console.print(f"[dim]DEBUG: Got {len(turn_result['agent_responses'])} responses[/dim]")
-
                 # Display agent responses (only the new ones from this turn)
-                for i, msg in enumerate(turn_result["agent_responses"]):
-                    console.print(f"[dim]DEBUG: Response {i+1} from {msg.sender_callsign}, length={len(msg.content)}[/dim]")
+                for msg in turn_result["agent_responses"]:
                     console.print(f"\n[green]{msg.format_for_display()}[/green]\n")
             
             except KeyboardInterrupt:
