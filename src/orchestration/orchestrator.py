@@ -128,7 +128,7 @@ class Orchestrator:
         max_responses: int = 3,
         timeout_seconds: float = 30.0
     ) -> List[Message]:
-        """Process agent responses to recent messages.
+        """Process agent responses with directed communication support.
 
         Args:
             max_responses: Maximum number of agents to respond
@@ -140,17 +140,37 @@ class Orchestrator:
         responses = []
         responding_agents = []
 
-        # Determine which agents should respond
-        for agent in self.agents.values():
-            if len(responding_agents) >= max_responses:
-                break
+        # Get the most recent message to check for directed communication
+        recent_messages = self.channel.get_recent_messages(1)
+        if recent_messages:
+            last_message = recent_messages[0]
 
-            if agent.should_respond(self.channel, self.context_window):
-                responding_agents.append(agent)
+            # Check if message is directed to specific agent
+            if last_message.recipient_callsign and last_message.recipient_callsign.upper() != "ALL":
+                # Directed message - find the recipient agent
+                target_agent = self._find_agent_by_callsign(last_message.recipient_callsign)
 
-        # If no agents want to respond and we have a squad leader, they respond
-        if not responding_agents and self.squad_leader:
-            responding_agents.append(self.squad_leader)
+                if target_agent:
+                    # Only the target agent should respond
+                    responding_agents.append(target_agent)
+                elif self.squad_leader:
+                    # If recipient not found, squad leader handles it
+                    responding_agents.append(self.squad_leader)
+            else:
+                # Broadcast or undirected - poll agents normally
+                for agent in self.agents.values():
+                    if len(responding_agents) >= max_responses:
+                        break
+
+                    if agent.should_respond(self.channel, self.context_window):
+                        responding_agents.append(agent)
+
+                # If no agents want to respond and we have a squad leader, they respond
+                if not responding_agents and self.squad_leader:
+                    responding_agents.append(self.squad_leader)
+        else:
+            # No messages - shouldn't happen, but handle gracefully
+            pass
 
         # Generate responses (now async)
         for agent in responding_agents:
@@ -162,6 +182,24 @@ class Orchestrator:
                 print(f"Error processing response from {agent.callsign}: {e}")
 
         return responses
+
+    def _find_agent_by_callsign(self, callsign: str) -> Optional[BaseAgent]:
+        """Find an agent by their callsign.
+
+        Args:
+            callsign: Agent callsign to search for
+
+        Returns:
+            Matching agent or None
+        """
+        callsign_normalized = callsign.upper().replace("-", " ").replace("_", " ")
+
+        for agent in self.agents.values():
+            agent_callsign = agent.callsign.upper().replace("-", " ").replace("_", " ")
+            if agent_callsign == callsign_normalized:
+                return agent
+
+        return None
 
     async def run_turn(
         self,
