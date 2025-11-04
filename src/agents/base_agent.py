@@ -2,6 +2,7 @@
 
 import os
 import re
+import time
 from typing import List, Optional, Dict, Any
 from anthropic import Anthropic
 
@@ -10,6 +11,7 @@ from ..channel.shared_channel import SharedChannel
 from ..channel.voice_net_protocol import VoiceNetProtocol
 from .speaking_criteria import SpeakingCriteria, DirectAddressCriteria
 from ..mcp.mcp_manager import MCPManager
+from ..utils.logger import get_logger, log_tool_execution, log_agent_action
 
 
 class BaseAgent:
@@ -51,6 +53,9 @@ class BaseAgent:
         self.temperature = temperature
         self.max_tokens = max_tokens
 
+        # Initialize logger
+        self.logger = get_logger(f"{__name__}.{callsign}")
+
         # Initialize agent memory
         self.memory: Dict[str, Any] = {
             "task_list": [],
@@ -68,6 +73,16 @@ class BaseAgent:
         self.client = Anthropic(api_key=api_key)
         self.protocol = VoiceNetProtocol()
 
+        # Log initialization
+        self.logger.info(
+            f"Agent initialized: {self.callsign}",
+            extra={
+                "agent_id": self.agent_id,
+                "model": self.model,
+                "has_mcp": self.mcp_manager is not None
+            }
+        )
+
     def should_respond(
         self,
         channel: SharedChannel,
@@ -83,11 +98,18 @@ class BaseAgent:
             True if agent should respond
         """
         recent_messages = channel.get_recent_messages(context_window)
-        return self.speaking_criteria.should_respond(
+        should_respond = self.speaking_criteria.should_respond(
             self.agent_id,
             self.callsign,
             recent_messages
         )
+
+        self.logger.debug(
+            f"Response decision: {'responding' if should_respond else 'silent'}",
+            extra={"agent_id": self.agent_id}
+        )
+
+        return should_respond
 
     async def generate_response(
         self,
@@ -103,6 +125,14 @@ class BaseAgent:
         Returns:
             Generated response text
         """
+        # Log response generation start
+        self.logger.info(
+            "Generating response",
+            extra={"agent_id": self.agent_id}
+        )
+
+        start_time = time.time()
+
         # Get context messages
         context_messages = channel.get_context_window(
             self.callsign,
@@ -181,6 +211,13 @@ class BaseAgent:
 
         # Extract and process any memory updates from the response
         self._extract_memory_updates(response_text)
+
+        # Log completion
+        duration_ms = (time.time() - start_time) * 1000
+        self.logger.info(
+            f"Response generated ({duration_ms:.2f}ms, {len(response_text)} chars)",
+            extra={"agent_id": self.agent_id}
+        )
 
         return response_text
 
@@ -342,21 +379,58 @@ Your memory persists across conversations and helps you maintain context."""
         if not self.mcp_manager:
             return "Error: No MCP manager available"
 
+        # Log tool execution start
+        self.logger.info(
+            f"Executing tool: {tool_name}",
+            extra={"agent_id": self.agent_id, "tool_name": tool_name}
+        )
+        self.logger.debug(
+            f"Tool arguments: {arguments}",
+            extra={"agent_id": self.agent_id, "tool_name": tool_name}
+        )
+
+        start_time = time.time()
+
         try:
             result = await self.mcp_manager.call_tool(tool_name, arguments)
+            duration_ms = (time.time() - start_time) * 1000
 
             # Extract text from MCP result
+            result_text = ""
             if result and hasattr(result, 'content') and result.content:
                 # MCP results typically have a content array
                 if isinstance(result.content, list) and len(result.content) > 0:
-                    return result.content[0].text
-                return str(result.content)
+                    result_text = result.content[0].text
+                else:
+                    result_text = str(result.content)
+            else:
+                result_text = str(result)
 
-            return str(result)
+            # Log successful execution
+            log_tool_execution(
+                self.logger,
+                tool_name,
+                self.agent_id,
+                success=True,
+                duration_ms=duration_ms
+            )
+
+            return result_text
 
         except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
             error_msg = f"Error executing tool {tool_name}: {str(e)}"
-            print(error_msg)
+
+            # Log failed execution
+            log_tool_execution(
+                self.logger,
+                tool_name,
+                self.agent_id,
+                success=False,
+                duration_ms=duration_ms,
+                error=str(e)
+            )
+
             return error_msg
 
     def _build_memory_context(self) -> str:
@@ -417,20 +491,38 @@ Your memory persists across conversations and helps you maintain context."""
         actual_category = category_map.get(category, category)
 
         if actual_category not in self.memory:
-            print(f"Warning: Unknown memory category '{category}' (mapped to '{actual_category}')")
+            self.logger.warning(
+                f"Unknown memory category '{category}' (mapped to '{actual_category}')",
+                extra={"agent_id": self.agent_id}
+            )
             return
 
         if isinstance(self.memory[actual_category], list):
             self.memory[actual_category].append(content)
+            self.logger.debug(
+                f"Memory updated: {actual_category}",
+                extra={"agent_id": self.agent_id, "content": str(content)[:100]}
+            )
         elif isinstance(self.memory[actual_category], dict):
             # For key_facts, expect "key=value" format
             if "=" in str(content):
                 key, value = str(content).split("=", 1)
                 self.memory[actual_category][key.strip()] = value.strip()
+                self.logger.debug(
+                    f"Memory updated: {actual_category}[{key.strip()}]",
+                    extra={"agent_id": self.agent_id}
+                )
             else:
-                print(f"Warning: key_facts requires 'key=value' format, got: {content}")
+                self.logger.warning(
+                    f"key_facts requires 'key=value' format, got: {content}",
+                    extra={"agent_id": self.agent_id}
+                )
         else:
             self.memory[actual_category] = content
+            self.logger.debug(
+                f"Memory updated: {actual_category}",
+                extra={"agent_id": self.agent_id}
+            )
 
     def _extract_memory_updates(self, response: str):
         """Parse response for memory update commands.
