@@ -27,6 +27,7 @@ from src.agents.speaking_criteria import KeywordCriteria, CompositeCriteria, Dir
 from src.channel.shared_channel import SharedChannel
 from src.orchestration.orchestrator import Orchestrator
 from src.config import load_config
+from src.mcp.mcp_manager import get_mcp_manager, initialize_all_aviation_mcps
 
 console = Console()
 
@@ -157,14 +158,45 @@ async def main():
         return
     
     try:
+        # Initialize MCP servers for aviation tools
+        console.print("\n[dim]Initializing MCP servers for aviation tools...[/dim]")
+
+        # Determine paths to MCP servers (relative to parent directory)
+        parent_dir = Path(__file__).parent.parent
+        aerospace_path = str(parent_dir / "aerospace-mcp")
+        aviation_weather_path = str(parent_dir / "aviation-weather-mcp")
+        blevinstein_path = str(parent_dir / "aviation-mcp")
+
+        # Initialize all available MCP servers
+        mcp_results = await initialize_all_aviation_mcps(
+            aerospace_path=aerospace_path if Path(aerospace_path).exists() else None,
+            aviation_weather_path=aviation_weather_path if Path(aviation_weather_path).exists() else None,
+            blevinstein_aviation_path=blevinstein_path if Path(blevinstein_path).exists() else None
+        )
+
+        # Report MCP initialization results
+        mcp_connected = False
+        for server_name, success in mcp_results.items():
+            if success:
+                console.print(f"[green]✓ Connected to {server_name}[/green]")
+                mcp_connected = True
+            else:
+                console.print(f"[yellow]⚠ Could not connect to {server_name}[/yellow]")
+
+        if not mcp_connected:
+            console.print("[yellow]⚠ No MCP servers connected - agents will operate without tool access[/yellow]")
+
+        # Get MCP manager instance
+        mcp_manager = await get_mcp_manager()
+
         # Load mission orders
         console.print("\n[dim]Loading mission orders from configs/surveillance_mission.yaml...[/dim]")
         mission_data = load_mission_orders("configs/surveillance_mission.yaml")
-        
+
         # Load HC-144 crew configuration
         console.print("[dim]Loading HC-144 crew configuration...[/dim]\n")
         config = load_config("configs/HC-144.yaml")
-        
+
         # Create shared channel and orchestrator
         channel = SharedChannel()
         orchestrator = Orchestrator(
@@ -173,13 +205,14 @@ async def main():
             context_window=config.orchestration.context_window
         )
         
-        # Create agents from config
+        # Create agents from config with MCP tool access
         for agent_cfg in config.agents:
             if agent_cfg.agent_type == "squad_leader":
                 agent = SquadLeaderAgent(
                     agent_id=agent_cfg.agent_id,
                     callsign=agent_cfg.callsign,
                     system_prompt=agent_cfg.system_prompt,
+                    mcp_manager=mcp_manager if mcp_connected else None,
                     model=agent_cfg.model,
                     temperature=agent_cfg.temperature,
                     max_tokens=agent_cfg.max_tokens
@@ -198,19 +231,20 @@ async def main():
                                     case_sensitive=crit_cfg.case_sensitive
                                 )
                             )
-                
+
                 speaking_criteria = CompositeCriteria(criteria_list) if criteria_list else None
-                
+
                 agent = BaseAgent(
                     agent_id=agent_cfg.agent_id,
                     callsign=agent_cfg.callsign,
                     system_prompt=agent_cfg.system_prompt or "You are a helpful agent.",
                     speaking_criteria=speaking_criteria,
+                    mcp_manager=mcp_manager if mcp_connected else None,
                     model=agent_cfg.model,
                     temperature=agent_cfg.temperature,
                     max_tokens=agent_cfg.max_tokens
                 )
-            
+
             orchestrator.add_agent(agent)
         
         orchestrator.start()
@@ -285,11 +319,23 @@ Crew, acknowledge receipt of mission brief and provide your initial assessment."
         
         orchestrator.stop()
         console.print("\n[yellow]Mission session ended.[/yellow]")
-    
+
+        # Cleanup MCP connections
+        if mcp_connected:
+            console.print("[dim]Cleaning up MCP connections...[/dim]")
+            await mcp_manager.cleanup()
+
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")
         import traceback
         traceback.print_exc()
+
+        # Cleanup MCP connections on error
+        try:
+            mcp_manager = await get_mcp_manager()
+            await mcp_manager.cleanup()
+        except:
+            pass
 
 
 if __name__ == "__main__":
