@@ -12,6 +12,12 @@ from ..channel.voice_net_protocol import VoiceNetProtocol
 from .speaking_criteria import SpeakingCriteria, DirectAddressCriteria
 from ..mcp.mcp_manager import MCPManager
 from ..utils.logger import get_logger, log_tool_execution, log_agent_action
+from ..exceptions import (
+    ToolExecutionError,
+    ToolNotFoundError,
+    ToolTimeoutError,
+    CircuitBreakerOpenError
+)
 
 
 class BaseAgent:
@@ -417,11 +423,55 @@ Your memory persists across conversations and helps you maintain context."""
 
             return result_text
 
-        except Exception as e:
+        except ToolNotFoundError as e:
             duration_ms = (time.time() - start_time) * 1000
-            error_msg = f"Error executing tool {tool_name}: {str(e)}"
+            error_msg = f"Tool '{tool_name}' not found. The tool may not exist or MCP server may be disconnected."
 
-            # Log failed execution
+            log_tool_execution(
+                self.logger,
+                tool_name,
+                self.agent_id,
+                success=False,
+                duration_ms=duration_ms,
+                error=error_msg
+            )
+
+            return f"Error: {error_msg}"
+
+        except ToolTimeoutError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            error_msg = f"Tool '{tool_name}' timed out. The operation took too long to complete."
+
+            log_tool_execution(
+                self.logger,
+                tool_name,
+                self.agent_id,
+                success=False,
+                duration_ms=duration_ms,
+                error=error_msg
+            )
+
+            return f"Error: {error_msg}"
+
+        except CircuitBreakerOpenError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            error_msg = f"Tool '{tool_name}' temporarily unavailable due to repeated failures. Service will retry automatically."
+
+            log_tool_execution(
+                self.logger,
+                tool_name,
+                self.agent_id,
+                success=False,
+                duration_ms=duration_ms,
+                error=error_msg
+            )
+
+            return f"Error: {error_msg} You can continue without this tool."
+
+        except ToolExecutionError as e:
+            duration_ms = (time.time() - start_time) * 1000
+            error_msg = f"Tool '{tool_name}' execution failed: {e.message}"
+
             log_tool_execution(
                 self.logger,
                 tool_name,
@@ -431,7 +481,25 @@ Your memory persists across conversations and helps you maintain context."""
                 error=str(e)
             )
 
-            return error_msg
+            return f"Error: {error_msg}"
+
+        except Exception as e:
+            duration_ms = (time.time() - start_time) * 1000
+            error_msg = f"Unexpected error executing tool {tool_name}: {str(e)}"
+
+            # Log failed execution with full context
+            log_tool_execution(
+                self.logger,
+                tool_name,
+                self.agent_id,
+                success=False,
+                duration_ms=duration_ms,
+                error=str(e)
+            )
+
+            self.logger.error(error_msg, exc_info=True)
+
+            return f"Error: {error_msg}"
 
     def _build_memory_context(self) -> str:
         """Build memory context for system prompt.

@@ -7,6 +7,20 @@ from contextlib import AsyncExitStack
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
+from ..utils import get_logger, RetryConfig, async_retry_with_backoff, get_circuit_breaker_manager
+from ..exceptions import (
+    MCPConnectionError,
+    MCPServerNotFoundError,
+    ToolExecutionError,
+    ToolNotFoundError,
+    ToolTimeoutError,
+    NetworkError,
+    mcp_connection_error,
+    tool_execution_error
+)
+
+logger = get_logger(__name__)
+
 
 class MCPManager:
     """Manages connections to MCP servers and tool discovery.
@@ -24,6 +38,16 @@ class MCPManager:
         self.tools_cache: Dict[str, List[Dict[str, Any]]] = {}
         self.exit_stack = AsyncExitStack()
         self._initialized = False
+        self.circuit_breaker_manager = get_circuit_breaker_manager()
+
+        # Retry configuration for MCP operations
+        self.retry_config = RetryConfig(
+            max_attempts=3,
+            initial_delay=1.0,
+            max_delay=10.0,
+            exponential_base=2.0,
+            jitter=True
+        )
 
     async def connect_server(
         self,
@@ -42,7 +66,12 @@ class MCPManager:
 
         Returns:
             True if connection successful
+
+        Raises:
+            MCPConnectionError: If connection fails after retries
         """
+        logger.info(f"Connecting to MCP server: {server_name}")
+
         try:
             # Create server parameters
             server_params = StdioServerParameters(
@@ -51,9 +80,10 @@ class MCPManager:
                 env=env or {}
             )
 
-            # Connect to server
-            stdio_transport = await self.exit_stack.enter_async_context(
-                stdio_client(server_params)
+            # Connect to server (with timeout)
+            stdio_transport = await asyncio.wait_for(
+                self.exit_stack.enter_async_context(stdio_client(server_params)),
+                timeout=30.0
             )
 
             # Create session
@@ -62,8 +92,8 @@ class MCPManager:
                 ClientSession(read, write)
             )
 
-            # Initialize session
-            await session.initialize()
+            # Initialize session (with timeout)
+            await asyncio.wait_for(session.initialize(), timeout=10.0)
 
             # Store session
             self.sessions[server_name] = session
@@ -72,24 +102,47 @@ class MCPManager:
             await self._discover_tools(server_name)
 
             self._initialized = True
+            logger.info(f"Successfully connected to {server_name}")
             return True
 
+        except asyncio.TimeoutError as e:
+            error_msg = f"Connection to {server_name} timed out"
+            logger.error(error_msg)
+            raise MCPConnectionError(
+                error_msg,
+                context={"server_name": server_name, "error": "timeout"}
+            )
+        except FileNotFoundError as e:
+            error_msg = f"MCP server not found: {server_name}"
+            logger.error(error_msg)
+            raise MCPServerNotFoundError(
+                error_msg,
+                context={"server_name": server_name, "command": command, "args": args}
+            )
         except Exception as e:
-            print(f"Error connecting to {server_name}: {e}")
-            return False
+            error_msg = f"Failed to connect to {server_name}"
+            logger.error(f"{error_msg}: {str(e)}", exc_info=True)
+            raise mcp_connection_error(server_name, e)
 
     async def _discover_tools(self, server_name: str):
         """Discover available tools from a connected server.
 
         Args:
             server_name: Name of the server to query
+
+        Raises:
+            MCPConnectionError: If tool discovery fails
         """
         if server_name not in self.sessions:
+            logger.warning(f"Cannot discover tools: {server_name} not connected")
             return
 
         try:
             session = self.sessions[server_name]
-            tools_response = await session.list_tools()
+            tools_response = await asyncio.wait_for(
+                session.list_tools(),
+                timeout=10.0
+            )
 
             # Cache tool information
             self.tools_cache[server_name] = [
@@ -101,8 +154,22 @@ class MCPManager:
                 for tool in tools_response.tools
             ]
 
+            logger.info(f"Discovered {len(self.tools_cache[server_name])} tools from {server_name}")
+
+        except asyncio.TimeoutError:
+            error_msg = f"Tool discovery timed out for {server_name}"
+            logger.error(error_msg)
+            raise MCPConnectionError(
+                error_msg,
+                context={"server_name": server_name, "operation": "discover_tools"}
+            )
         except Exception as e:
-            print(f"Error discovering tools from {server_name}: {e}")
+            error_msg = f"Error discovering tools from {server_name}"
+            logger.error(f"{error_msg}: {str(e)}", exc_info=True)
+            raise MCPConnectionError(
+                error_msg,
+                context={"server_name": server_name, "error": str(e)}
+            )
 
     def get_available_tools(self, server_name: Optional[str] = None) -> List[Dict[str, Any]]:
         """Get list of available tools.
@@ -141,20 +208,28 @@ class MCPManager:
         self,
         tool_name: str,
         arguments: Dict[str, Any],
-        server_name: Optional[str] = None
+        server_name: Optional[str] = None,
+        timeout: float = 30.0
     ) -> Optional[Any]:
-        """Call an MCP tool.
+        """Call an MCP tool with circuit breaker protection and retry logic.
 
         Args:
             tool_name: Name of the tool to call
             arguments: Tool arguments
             server_name: Optional server name. If None, searches all servers.
+            timeout: Operation timeout in seconds
 
         Returns:
-            Tool result or None if failed
+            Tool result
+
+        Raises:
+            ToolNotFoundError: If tool doesn't exist
+            ToolExecutionError: If tool execution fails
+            CircuitBreakerOpenError: If circuit breaker is open for the server
         """
         # Find the server that has this tool
         target_session = None
+        target_server_name = server_name
 
         if server_name and server_name in self.sessions:
             target_session = self.sessions[server_name]
@@ -163,20 +238,67 @@ class MCPManager:
             for srv_name, tools in self.tools_cache.items():
                 if any(tool["name"] == tool_name for tool in tools):
                     target_session = self.sessions.get(srv_name)
+                    target_server_name = srv_name
                     break
 
-        if not target_session:
-            print(f"Tool {tool_name} not found in any connected server")
-            return None
+        if not target_session or not target_server_name:
+            raise ToolNotFoundError(
+                f"Tool '{tool_name}' not found in any connected server",
+                context={
+                    "tool_name": tool_name,
+                    "available_servers": list(self.sessions.keys())
+                }
+            )
+
+        # Get circuit breaker for this server
+        breaker = self.circuit_breaker_manager.get_breaker(
+            name=f"mcp_{target_server_name}",
+            failure_threshold=5,
+            recovery_timeout=60.0,
+            timeout=timeout
+        )
+
+        logger.debug(f"Calling tool '{tool_name}' on {target_server_name}")
 
         try:
-            # Call the tool
-            result = await target_session.call_tool(tool_name, arguments)
+            # Call tool through circuit breaker
+            async def _call():
+                return await asyncio.wait_for(
+                    target_session.call_tool(tool_name, arguments),
+                    timeout=timeout
+                )
+
+            result = await breaker.call(_call)
+            logger.debug(f"Tool '{tool_name}' executed successfully")
             return result
 
+        except asyncio.TimeoutError:
+            error_msg = f"Tool '{tool_name}' timed out after {timeout}s"
+            logger.error(error_msg)
+            raise ToolTimeoutError(
+                error_msg,
+                context={
+                    "tool_name": tool_name,
+                    "server_name": target_server_name,
+                    "timeout_seconds": timeout
+                }
+            )
         except Exception as e:
-            print(f"Error calling tool {tool_name}: {e}")
-            return None
+            # Circuit breaker errors are already well-formatted
+            if isinstance(e, (ToolExecutionError, ToolNotFoundError, ToolTimeoutError)):
+                raise
+
+            error_msg = f"Tool '{tool_name}' execution failed"
+            logger.error(f"{error_msg}: {str(e)}", exc_info=True)
+            raise ToolExecutionError(
+                error_msg,
+                context={
+                    "tool_name": tool_name,
+                    "server_name": target_server_name,
+                    "error": str(e),
+                    "error_type": type(e).__name__
+                }
+            )
 
     async def close(self):
         """Close all server connections."""
@@ -233,16 +355,20 @@ async def initialize_aerospace_mcp(
         env: Optional environment variables
 
     Returns:
-        True if successful
+        True if successful, False if connection fails
     """
     manager = await get_mcp_manager()
 
-    return await manager.connect_server(
-        server_name="aerospace-mcp",
-        command="uv",
-        args=["--directory", aerospace_mcp_path, "run", "aerospace-mcp"],
-        env=env
-    )
+    try:
+        return await manager.connect_server(
+            server_name="aerospace-mcp",
+            command="uv",
+            args=["--directory", aerospace_mcp_path, "run", "aerospace-mcp"],
+            env=env
+        )
+    except (MCPConnectionError, MCPServerNotFoundError) as e:
+        logger.warning(f"Failed to initialize aerospace-mcp: {str(e)}")
+        return False
 
 
 async def initialize_aviation_weather_mcp(
@@ -256,16 +382,20 @@ async def initialize_aviation_weather_mcp(
         env: Optional environment variables
 
     Returns:
-        True if successful
+        True if successful, False if connection fails
     """
     manager = await get_mcp_manager()
 
-    return await manager.connect_server(
-        server_name="aviation-weather-mcp",
-        command="uv",
-        args=["--directory", aviation_weather_mcp_path, "run", "aviation-weather-mcp"],
-        env=env
-    )
+    try:
+        return await manager.connect_server(
+            server_name="aviation-weather-mcp",
+            command="uv",
+            args=["--directory", aviation_weather_mcp_path, "run", "aviation-weather-mcp"],
+            env=env
+        )
+    except (MCPConnectionError, MCPServerNotFoundError) as e:
+        logger.warning(f"Failed to initialize aviation-weather-mcp: {str(e)}")
+        return False
 
 
 async def initialize_blevinstein_aviation_mcp(
@@ -279,16 +409,20 @@ async def initialize_blevinstein_aviation_mcp(
         env: Optional environment variables
 
     Returns:
-        True if successful
+        True if successful, False if connection fails
     """
     manager = await get_mcp_manager()
 
-    return await manager.connect_server(
-        server_name="blevinstein-aviation-mcp",
-        command="uv",
-        args=["--directory", blevinstein_aviation_mcp_path, "run", "aviation-mcp"],
-        env=env
-    )
+    try:
+        return await manager.connect_server(
+            server_name="blevinstein-aviation-mcp",
+            command="uv",
+            args=["--directory", blevinstein_aviation_mcp_path, "run", "aviation-mcp"],
+            env=env
+        )
+    except (MCPConnectionError, MCPServerNotFoundError) as e:
+        logger.warning(f"Failed to initialize blevinstein-aviation-mcp: {str(e)}")
+        return False
 
 
 async def initialize_all_aviation_mcps(
