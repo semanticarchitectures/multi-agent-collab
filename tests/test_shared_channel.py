@@ -62,8 +62,7 @@ def test_get_messages_for_agent():
     channel.add_message(
         sender_id="agent2",
         content="Alpha One, this is Alpha Two, roger, over.",
-        sender_callsign="Alpha Two",
-        recipient_callsign="Alpha One"
+        sender_callsign="Alpha Two"
     )
 
     channel.add_message(

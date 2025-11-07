@@ -36,7 +36,7 @@ def test_parse_roger():
     parsed = VoiceNetProtocol.parse(msg)
 
     assert parsed.is_roger is True
-    assert parsed.content == "will comply"
+    assert parsed.content == "will comply."
 
 
 def test_parse_copy():
@@ -46,7 +46,7 @@ def test_parse_copy():
     parsed = VoiceNetProtocol.parse(msg)
 
     assert parsed.is_copy is True
-    assert parsed.content == "understood"
+    assert parsed.content == "understood."
 
 
 def test_parse_direct():
