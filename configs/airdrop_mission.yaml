@@ -1,0 +1,300 @@
+# Mission Order - HC-144 Humanitarian Air Drop Mission
+# Relief Supply Drop to Remote Island
+
+mission_info:
+  mission_number: "USCG-2025-1104-001"
+  mission_type: "HUMANITARIAN_AIRDROP"
+  classification: "UNCLASSIFIED"
+  priority: "HIGH"
+  issuing_authority: "Air Station Cape Cod Operations"
+  date_issued: "2025-11-04"
+  
+aircraft:
+  type: "HC-144A Ocean Sentry"
+  tail_number: "2307"
+  configuration: "CARGO_AIRDROP"
+  special_equipment:
+    - "Cargo rail system"
+    - "Static line attachment points"
+    - "Drop zone marking system"
+    - "GPS precision drop computer"
+    - "Cargo door modification"
+  
+cargo:
+  total_pallets: 6
+  pallet_specifications:
+    - pallet_id: "PALLET-01"
+      weight: 200  # lbs
+      contents: "Medical supplies and first aid equipment"
+      parachute_type: "G-12E cargo parachute"
+      release_sequence: 1
+      
+    - pallet_id: "PALLET-02"
+      weight: 200  # lbs
+      contents: "Non-perishable food rations (MREs)"
+      parachute_type: "G-12E cargo parachute"
+      release_sequence: 2
+      
+    - pallet_id: "PALLET-03"
+      weight: 200  # lbs
+      contents: "Water purification equipment and containers"
+      parachute_type: "G-12E cargo parachute"
+      release_sequence: 3
+      
+    - pallet_id: "PALLET-04"
+      weight: 200  # lbs
+      contents: "Emergency shelter materials and blankets"
+      parachute_type: "G-12E cargo parachute"
+      release_sequence: 4
+      
+    - pallet_id: "PALLET-05"
+      weight: 200  # lbs
+      contents: "Communication equipment and batteries"
+      parachute_type: "G-12E cargo parachute"
+      release_sequence: 5
+      
+    - pallet_id: "PALLET-06"
+      weight: 200  # lbs
+      contents: "Tools and emergency repair supplies"
+      parachute_type: "G-12E cargo parachute"
+      release_sequence: 6
+  
+  total_cargo_weight: 1200  # lbs (6 pallets × 200 lbs)
+  drop_interval: "10 seconds"  # Time between pallet releases
+  
+crew:
+  pilot_in_command:
+    name: "LCDR Smith, J."
+    qualification: "Aircraft Commander, IP, Airdrop Qualified"
+  first_officer:
+    name: "LT Johnson, M."
+    qualification: "Co-Pilot, Airdrop Qualified"
+  flight_engineer:
+    name: "AMT1 Williams, R."
+    qualification: "Flight Engineer, HC-144 Qualified, Loadmaster Certified"
+  additional_crew:
+    - name: "AMT2 Rodriguez, C."
+      position: "Loadmaster"
+      qualification: "Airdrop Specialist"
+    - name: "OS2 Davis, K."
+      position: "Drop Zone Observer"
+  
+flight_plan:
+  departure:
+    airport: "KFMH"  # Otis ANGB
+    runway: "05"
+    departure_time: "041000Z"  # 4th day, 1000 UTC
+  
+  route:
+    waypoints:
+      - "KFMH"
+      - "HYANS"  # Hyannis VOR
+      - "ACK"    # Nantucket VOR
+      - "DROP_ZONE_ALPHA"
+    altitude: "1500 FT AGL"  # Low altitude for accurate drop
+    airspeed: "120 KIAS"  # Slow speed for drop operations
+    
+  drop_zone:
+    description: "Emergency relief drop zone on Monomoy Island"
+    coordinates: "41°33'N, 069°59'W"
+    elevation: "15 FT MSL"
+    dimensions: "500 FT × 300 FT"
+    surface: "Sandy beach/grass"
+    obstacles: "None significant - clear approach from east"
+    wind_limitations: "Maximum 20 knots surface wind"
+    visibility_minimum: "3 SM"
+    
+  drop_parameters:
+    drop_altitude: "1500 FT AGL"
+    drop_airspeed: "120 KIAS"
+    drop_heading: "270° (west)"
+    computed_air_release_point: "41°33'12\"N, 070°00'30\"W"
+    release_interval: "10 seconds between pallets"
+    pattern: "Single pass, sequential release"
+    
+  destination:
+    airport: "KFMH"  # Return to Otis ANGB
+    runway: "05"
+    estimated_arrival: "041400Z"
+    
+  alternates:
+    primary: "KACK"  # Nantucket Memorial
+    secondary: "KHYA"  # Barnstable Municipal
+    
+fuel:
+  planned_fuel_load: "6000 LBS"
+  fuel_burn_rate: "900 LBS/HR"  # Lower due to reduced speed
+  estimated_endurance: "6.0 hours"
+  bingo_fuel: "2000 LBS"
+  reserve_fuel: "1200 LBS"
+  
+performance:
+  takeoff_weight: "45200 LBS"  # Includes cargo
+  drop_weight: "44000 LBS"  # After cargo release
+  landing_weight: "42500 LBS"
+  center_of_gravity_takeoff: "29.5% MAC"
+  center_of_gravity_after_drop: "27.8% MAC"  # CG shift after cargo release
+  max_altitude: "5000 FT"
+  
+weather:
+  departure_weather:
+    conditions: "VFR"
+    winds: "080/10KT"
+    visibility: "10 SM"
+    ceiling: "SCT040"
+  
+  drop_zone_weather:
+    conditions: "VFR"
+    winds: "090/12G15KT"
+    visibility: "7 SM"
+    ceiling: "BKN030"
+    surface_wind: "090/12G15KT"  # Critical for drop accuracy
+    temperature: "55°F"
+    
+  destination_weather:
+    conditions: "VFR"
+    winds: "080/10KT"
+    visibility: "10 SM"
+    ceiling: "SCT040"
+    
+mission_objectives:
+  primary: "Deliver 1200 lbs of emergency relief supplies to isolated personnel on Monomoy Island via precision airdrop"
+  secondary:
+    - "Execute all 6 pallet drops within designated drop zone"
+    - "Maintain drop accuracy within 100 meters of target"
+    - "Ensure safe cargo separation and parachute deployment"
+    - "Document drop results with photography"
+  success_criteria:
+    - "All 6 pallets successfully released"
+    - "All parachutes deploy properly"
+    - "Minimum 4 of 6 pallets land within drop zone"
+    - "No damage to aircraft or injury to crew"
+    - "Ground team confirms receipt of supplies"
+  
+special_instructions:
+  pre_drop:
+    - "Complete cargo securing and static line inspection"
+    - "Verify all parachutes properly rigged and inspected"
+    - "Test cargo door operation and locking mechanisms"
+    - "Brief all crew on emergency jettison procedures"
+    - "Coordinate with ground team on drop zone marking"
+    
+  during_drop:
+    - "Maintain precise altitude 1500 FT AGL ±50 FT"
+    - "Maintain airspeed 120 KIAS ±5 knots"
+    - "Loadmaster has final authority for drop execution"
+    - "10 second interval between pallet releases"
+    - "Pilot calls 'GREEN LIGHT' at computed release point"
+    - "Loadmaster confirms each pallet release"
+    
+  post_drop:
+    - "Execute climbing right turn to 3000 FT"
+    - "Observe parachute deployment and landing"
+    - "Photograph drop zone and landed pallets"
+    - "Contact ground team for damage assessment"
+    - "Secure cargo door and verify aircraft configuration"
+    - "Check CG shift and adjust trim as needed"
+  
+communications:
+  departure_frequency: "Cape Approach 120.4 MHz"
+  en_route_frequencies:
+    - "Boston Center 128.95 MHz"
+  drop_zone_frequency: "USCG Ops Primary 164.15 MHz"
+  ground_team_frequency: "Tactical 163.50 MHz"
+  guard_frequency: "121.5 MHz"
+  
+airdrop_procedures:
+  crew_coordination:
+    - "Pilot: Maintains precise altitude, airspeed, and heading"
+    - "Co-Pilot: Monitors instruments, calls altitudes and airspeeds"
+    - "Flight Engineer: Monitors engines, assists with CG calculations"
+    - "Loadmaster: Controls cargo release, verifies parachute deployment"
+    - "Observer: Watches for obstacles, confirms drop zone clear"
+    
+  release_sequence:
+    - step: 1
+      action: "Pilot establishes drop run heading 270°"
+      altitude: "1500 FT AGL"
+      airspeed: "120 KIAS"
+      
+    - step: 2
+      action: "Loadmaster opens cargo door, verifies clear"
+      checkpoint: "2 minutes before release point"
+      
+    - step: 3
+      action: "Loadmaster positions PALLET-01 at door"
+      checkpoint: "1 minute before release point"
+      
+    - step: 4
+      action: "Pilot calls 'GREEN LIGHT' at computed release point"
+      checkpoint: "At release point"
+      
+    - step: 5
+      action: "Loadmaster releases PALLET-01, confirms 'PALLET AWAY'"
+      timing: "On green light"
+      
+    - step: 6
+      action: "Repeat for PALLET-02 through PALLET-06"
+      timing: "10 second intervals"
+      
+    - step: 7
+      action: "Loadmaster confirms all pallets released, closes door"
+      checkpoint: "After final pallet"
+      
+    - step: 8
+      action: "Pilot executes climbing right turn, observers document results"
+      checkpoint: "Immediately after final release"
+  
+  emergency_procedures:
+    hung_load: "Do not attempt to force release - return to base with load secured"
+    parachute_malfunction: "Note pallet number, continue mission, report to ground team"
+    aircraft_emergency: "Jettison all cargo immediately if required for safety"
+    
+restrictions_and_constraints:
+  airspace_restrictions:
+    - "Coordinate with Boston Center for drop zone clearance"
+    - "Establish 5 NM radius restricted area during drop"
+    - "Notify maritime traffic of drop operations"
+  weather_minimums:
+    - "Minimum 3 SM visibility at drop zone"
+    - "Minimum 1000 FT ceiling"
+    - "Maximum surface wind 20 knots"
+    - "No thunderstorms within 10 NM"
+  equipment_requirements:
+    - "All parachutes inspected within 30 days"
+    - "Cargo door operational check complete"
+    - "Static line anchors load tested"
+    - "Drop computer calibrated and tested"
+  
+risk_assessment:
+  identified_hazards:
+    - "Low altitude operations (1500 FT AGL)"
+    - "Cargo shift affecting CG during release"
+    - "Parachute deployment failure"
+    - "Pallet landing outside drop zone"
+    - "Cargo door malfunction"
+    - "Wind shear or turbulence during drop run"
+  mitigation_measures:
+    - "Experienced airdrop-qualified crew"
+    - "CG calculated for each pallet release"
+    - "All parachutes inspected and certified"
+    - "Multiple drop zone surveys conducted"
+    - "Cargo door inspected and tested pre-flight"
+    - "Weather monitored continuously, abort criteria established"
+    - "Emergency jettison procedures briefed"
+  overall_risk_level: "MODERATE-HIGH"
+  
+approvals:
+  operations_officer: "CDR Thompson, P. - Approved"
+  maintenance_officer: "CWO3 Anderson, L. - Aircraft 2307 airworthy, cargo system certified"
+  commanding_officer: "CAPT Wilson, R. - Mission approved"
+  safety_officer: "LCDR Martinez, S. - Risk assessment reviewed and accepted"
+
+# Additional Notes:
+# - All crew members are current and qualified for airdrop operations
+# - Cargo loaded and secured IAW USCG airdrop manual
+# - Ground team in position with radio contact established
+# - Drop zone surveyed and marked with smoke
+# - Weather forecast favorable for entire mission window
+# - Backup drop date: 051000Z if weather deteriorates
+
