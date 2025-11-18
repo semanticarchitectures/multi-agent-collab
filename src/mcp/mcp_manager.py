@@ -425,10 +425,44 @@ async def initialize_blevinstein_aviation_mcp(
         return False
 
 
+async def initialize_aircraft_sim_mcp(
+    aircraft_sim_mcp_path: str,
+    env: Optional[Dict[str, str]] = None
+) -> bool:
+    """Initialize connection to the Aircraft Simulator MCP server.
+
+    Args:
+        aircraft_sim_mcp_path: Path to aircraft-sim-mcp directory
+        env: Optional environment variables
+
+    Returns:
+        True if successful, False if connection fails
+    """
+    manager = await get_mcp_manager()
+
+    try:
+        # Use the aircraft-sim-mcp's venv Python to ensure JSBSim is available
+        venv_python = f"{aircraft_sim_mcp_path}/venv/bin/python"
+
+        return await manager.connect_server(
+            server_name="aircraft-sim-mcp",
+            command=venv_python,
+            args=["-m", "flight_simulator_mcp.server"],
+            env={
+                "PYTHONPATH": f"{aircraft_sim_mcp_path}/src",
+                **(env or {})
+            }
+        )
+    except (MCPConnectionError, MCPServerNotFoundError) as e:
+        logger.warning(f"Failed to initialize aircraft-sim-mcp: {str(e)}")
+        return False
+
+
 async def initialize_all_aviation_mcps(
     aerospace_path: Optional[str] = None,
     aviation_weather_path: Optional[str] = None,
     blevinstein_aviation_path: Optional[str] = None,
+    aircraft_sim_path: Optional[str] = None,
     env: Optional[Dict[str, str]] = None
 ) -> Dict[str, bool]:
     """Initialize all available aviation MCP servers.
@@ -437,6 +471,7 @@ async def initialize_all_aviation_mcps(
         aerospace_path: Path to aerospace-mcp directory (optional)
         aviation_weather_path: Path to aviation-weather-mcp directory (optional)
         blevinstein_aviation_path: Path to blevinstein aviation-mcp directory (optional)
+        aircraft_sim_path: Path to aircraft-sim-mcp directory (optional)
         env: Optional environment variables
 
     Returns:
@@ -455,6 +490,11 @@ async def initialize_all_aviation_mcps(
     if blevinstein_aviation_path:
         results["blevinstein-aviation-mcp"] = await initialize_blevinstein_aviation_mcp(
             blevinstein_aviation_path, env
+        )
+
+    if aircraft_sim_path:
+        results["aircraft-sim-mcp"] = await initialize_aircraft_sim_mcp(
+            aircraft_sim_path, env
         )
 
     return results

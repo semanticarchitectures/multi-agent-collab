@@ -6,6 +6,7 @@ This script:
 1. Loads the HC-144 crew configuration
 2. Presents the surveillance mission orders from configs/surveillance_mission.yaml
 3. Allows you to interact with the crew to execute the mission
+4. Supports starting from mission snapshots (e.g., --snapshot on_station_patrol)
 """
 
 import asyncio
@@ -13,6 +14,7 @@ import os
 import sys
 from pathlib import Path
 import yaml
+import argparse
 from rich.console import Console
 from rich.panel import Panel
 from rich.markdown import Markdown
@@ -28,6 +30,7 @@ from src.channel.shared_channel import SharedChannel
 from src.orchestration.orchestrator import Orchestrator
 from src.config import load_config
 from src.mcp.mcp_manager import get_mcp_manager, initialize_all_aviation_mcps
+from src.utils.mission_snapshots import MissionSnapshotManager
 
 console = Console()
 
@@ -143,20 +146,78 @@ def format_mission_brief(mission_data: dict) -> str:
     return brief
 
 
-async def main():
-    """Run the surveillance mission interactive session."""
-    
+async def initialize_simulator_from_snapshot(snapshot):
+    """Initialize the aircraft simulator with snapshot parameters."""
+    manager = await get_mcp_manager()
+
+    # Get the aircraft-sim-mcp client
+    client = manager.get_client("aircraft-sim-mcp")
+    if not client:
+        console.print("[yellow]⚠ Aircraft simulator not connected - skipping initialization[/yellow]")
+        return False
+
+    # Call reset_simulation tool
+    params = snapshot.to_simulator_init_params()
+
+    console.print(f"\n[cyan]Initializing simulator from snapshot...[/cyan]")
+    console.print(f"  Aircraft: {params['aircraft_model']}")
+    console.print(f"  Position: {params['latitude']:.4f}°N, {abs(params['longitude']):.4f}°W")
+    console.print(f"  Altitude: {params['altitude_msl']:.0f} ft MSL")
+    console.print(f"  Heading: {params['heading']:.0f}°")
+    console.print(f"  Airspeed: {params['airspeed']:.0f} knots")
+
+    try:
+        result = await client.call_tool("reset_simulation", params)
+        console.print(f"[green]✓ {result.content[0].text}[/green]\n")
+        return True
+    except Exception as e:
+        console.print(f"[yellow]⚠ Failed to initialize simulator: {e}[/yellow]")
+        return False
+
+
+async def main(snapshot_id=None):
+    """Run the surveillance mission interactive session.
+
+    Args:
+        snapshot_id: Optional snapshot ID to start from (e.g., 'on_station_patrol')
+    """
+
     console.print(Panel.fit(
         "[bold cyan]HC-144 Surveillance Mission[/bold cyan]\n"
         "Interactive Mission Execution Session",
         title="USCG Air Station Cape Cod"
     ))
-    
+
     # Check for API key
     if not os.getenv("ANTHROPIC_API_KEY"):
         console.print("[red]Error: ANTHROPIC_API_KEY environment variable not set[/red]")
         return
-    
+
+    # Load snapshot if specified
+    snapshot = None
+    if snapshot_id:
+        try:
+            snapshot_manager = MissionSnapshotManager()
+            snapshot = snapshot_manager.get_snapshot("surveillance_mission_snapshots", snapshot_id)
+
+            if not snapshot:
+                console.print(f"[red]Error: Snapshot '{snapshot_id}' not found[/red]")
+                console.print("\nAvailable snapshots:")
+                for sid in snapshot_manager.list_snapshots("surveillance_mission_snapshots"):
+                    s = snapshot_manager.get_snapshot("surveillance_mission_snapshots", sid)
+                    console.print(f"  • [green]{sid}[/green]: {s.name}")
+                return
+
+            # Display snapshot information
+            console.print(Panel(
+                Markdown(snapshot.get_context_message()),
+                title="[bold cyan]Starting from Mission Snapshot[/bold cyan]",
+                border_style="cyan"
+            ))
+        except Exception as e:
+            console.print(f"[red]Error loading snapshot: {e}[/red]")
+            return
+
     try:
         # Initialize MCP servers for aviation tools
         console.print("\n[dim]Initializing MCP servers for aviation tools...[/dim]")
@@ -166,12 +227,14 @@ async def main():
         aerospace_path = str(parent_dir / "aerospace-mcp")
         aviation_weather_path = str(parent_dir / "aviation-weather-mcp")
         blevinstein_path = str(parent_dir / "aviation-mcp")
+        aircraft_sim_path = str(parent_dir / "aircraft-sim-mcp")
 
         # Initialize all available MCP servers
         mcp_results = await initialize_all_aviation_mcps(
             aerospace_path=aerospace_path if Path(aerospace_path).exists() else None,
             aviation_weather_path=aviation_weather_path if Path(aviation_weather_path).exists() else None,
-            blevinstein_aviation_path=blevinstein_path if Path(blevinstein_path).exists() else None
+            blevinstein_aviation_path=blevinstein_path if Path(blevinstein_path).exists() else None,
+            aircraft_sim_path=aircraft_sim_path if Path(aircraft_sim_path).exists() else None
         )
 
         # Report MCP initialization results
@@ -188,6 +251,10 @@ async def main():
 
         # Get MCP manager instance
         mcp_manager = await get_mcp_manager()
+
+        # Initialize simulator from snapshot if provided
+        if snapshot:
+            await initialize_simulator_from_snapshot(snapshot)
 
         # Load mission orders
         console.print("\n[dim]Loading mission orders from configs/surveillance_mission.yaml...[/dim]")
@@ -339,5 +406,48 @@ Crew, acknowledge receipt of mission brief and provide your initial assessment."
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser(
+        description="Run HC-144 Surveillance Mission",
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="""
+Examples:
+  # Start mission from beginning
+  python run_surveillance_mission.py
+
+  # Start mission already on station in patrol area
+  python run_surveillance_mission.py --snapshot on_station_patrol
+
+  # List available snapshots
+  python run_surveillance_mission.py --list-snapshots
+        """
+    )
+    parser.add_argument(
+        "--snapshot",
+        help="Start from a specific mission snapshot (e.g., on_station_patrol)"
+    )
+    parser.add_argument(
+        "--list-snapshots",
+        action="store_true",
+        help="List available mission snapshots"
+    )
+
+    args = parser.parse_args()
+
+    if args.list_snapshots:
+        # List available snapshots
+        try:
+            snapshot_manager = MissionSnapshotManager()
+            console.print("\n[bold cyan]Available Surveillance Mission Snapshots:[/bold cyan]\n")
+            for snapshot_id in snapshot_manager.list_snapshots("surveillance_mission_snapshots"):
+                snapshot = snapshot_manager.get_snapshot("surveillance_mission_snapshots", snapshot_id)
+                console.print(f"[green]{snapshot_id}[/green]")
+                console.print(f"  Name: {snapshot.name}")
+                console.print(f"  Phase: {snapshot.mission_phase}")
+                if snapshot.time_into_mission:
+                    console.print(f"  Time: {snapshot.time_into_mission}")
+                console.print(f"  Description: {snapshot.description}\n")
+        except Exception as e:
+            console.print(f"[red]Error: {e}[/red]")
+    else:
+        asyncio.run(main(snapshot_id=args.snapshot))
 

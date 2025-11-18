@@ -1,0 +1,169 @@
+# Mission Snapshots - Pre-configured starting points for simulations
+# Use these to start a simulation at a specific point in the mission
+# without having to simulate takeoff, transit, etc.
+
+airdrop_mission_snapshots:
+  
+  # Snapshot 1: On the ground, ready for takeoff
+  pre_takeoff:
+    name: "Pre-Takeoff at Otis ANGB"
+    description: "Aircraft loaded with cargo, crew briefed, ready for departure"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.6544  # KFMH
+      longitude: -70.5214
+      altitude_msl: 131  # Field elevation
+      heading: 50  # Runway 05 heading
+      airspeed: 0  # Stationary
+    aircraft_state:
+      engines_running: false
+      cargo_loaded: true
+      pallets_remaining: 6
+      fuel_lbs: 6000
+    mission_phase: "PRE_DEPARTURE"
+    
+  # Snapshot 2: Enroute to drop zone
+  enroute_to_dz:
+    name: "Enroute to Drop Zone"
+    description: "Climbing out, heading toward Nantucket and drop zone"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.6000  # Between KFMH and drop zone
+      longitude: -70.2500
+      altitude_msl: 3500  # Climbing to pattern altitude
+      heading: 180  # Southbound
+      airspeed: 150  # Cruise climb
+    aircraft_state:
+      engines_running: true
+      cargo_loaded: true
+      pallets_remaining: 6
+      fuel_lbs: 5850  # ~15 min fuel burn
+    mission_phase: "ENROUTE"
+    time_into_mission: "15 minutes"
+    
+  # Snapshot 3: On station, ready to begin drop run
+  on_station_pre_drop:
+    name: "On Station - Ready for Drop Run"
+    description: "Established at drop altitude, approaching initial point for drop run"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.5500  # 2 NM east of drop zone
+      longitude: -69.9667  # East of Monomoy Island
+      altitude_msl: 1515  # 1500 AGL (15 ft elevation)
+      heading: 270  # Westbound for drop run
+      airspeed: 120  # Drop airspeed
+    aircraft_state:
+      engines_running: true
+      cargo_loaded: true
+      pallets_remaining: 6
+      fuel_lbs: 5400  # ~40 min into mission
+      cargo_door_open: false
+      loadmaster_ready: true
+    mission_phase: "ON_STATION_PRE_DROP"
+    time_into_mission: "40 minutes"
+    next_action: "Open cargo door and begin drop run"
+    
+  # Snapshot 4: Drop run in progress
+  drop_run_active:
+    name: "Drop Run - First Pallet Released"
+    description: "On drop run heading, first pallet just released, 5 remaining"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.5500
+      longitude: -69.9833  # Over drop zone
+      altitude_msl: 1515
+      heading: 270
+      airspeed: 120
+    aircraft_state:
+      engines_running: true
+      cargo_loaded: true
+      pallets_remaining: 5  # PALLET-01 already released
+      fuel_lbs: 5380
+      cargo_door_open: true
+      weight_lbs: 45000  # 200 lbs lighter
+    mission_phase: "DROP_RUN_ACTIVE"
+    time_into_mission: "42 minutes"
+    next_action: "Release PALLET-02 in 10 seconds"
+    
+  # Snapshot 5: All pallets dropped, observing results
+  post_drop_observation:
+    name: "Post-Drop Observation"
+    description: "All pallets released, climbing turn to observe parachute deployment"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.5450
+      longitude: -69.9700
+      altitude_msl: 2500  # Climbing
+      heading: 360  # Northbound in right turn
+      airspeed: 140  # Accelerating
+    aircraft_state:
+      engines_running: true
+      cargo_loaded: false
+      pallets_remaining: 0  # All released
+      fuel_lbs: 5350
+      cargo_door_open: false  # Secured
+      weight_lbs: 43800  # 1200 lbs lighter
+    mission_phase: "POST_DROP_OBSERVATION"
+    time_into_mission: "44 minutes"
+    next_action: "Photograph drop zone, contact ground team, return to base"
+    
+  # Snapshot 6: Return to base
+  return_to_base:
+    name: "Return to Base"
+    description: "Mission complete, heading back to Otis ANGB"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.6200
+      longitude: -70.3000
+      altitude_msl: 3000
+      heading: 320  # Northwest toward KFMH
+      airspeed: 180  # Cruise
+    aircraft_state:
+      engines_running: true
+      cargo_loaded: false
+      pallets_remaining: 0
+      fuel_lbs: 4800
+      weight_lbs: 43800
+    mission_phase: "RETURN_TO_BASE"
+    time_into_mission: "90 minutes"
+    next_action: "Contact Cape Approach for landing clearance"
+
+
+surveillance_mission_snapshots:
+  
+  # Snapshot 1: Departing Otis ANGB
+  departure:
+    name: "Departure from Otis ANGB"
+    description: "Just airborne, climbing out on departure"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.6544
+      longitude: -70.5214
+      altitude_msl: 1500  # Climbing
+      heading: 50
+      airspeed: 140
+    aircraft_state:
+      engines_running: true
+      fuel_lbs: 7500
+    mission_phase: "DEPARTURE"
+    
+  # Snapshot 2: On station in patrol area
+  on_station_patrol:
+    name: "On Station - Patrol Area"
+    description: "Established in racetrack pattern over surveillance area"
+    aircraft_model: "C130"
+    position:
+      latitude: 41.2500  # Center of patrol area
+      longitude: -69.5000
+      altitude_msl: 5000  # Patrol altitude
+      heading: 90  # Eastbound leg of racetrack
+      airspeed: 180
+    aircraft_state:
+      engines_running: true
+      fuel_lbs: 6800
+      radar_active: true
+      sensors_active: true
+    mission_phase: "ON_STATION_PATROL"
+    time_into_mission: "45 minutes"
+    next_action: "Continue surveillance, identify and classify vessels"
+
